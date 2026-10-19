@@ -4,6 +4,8 @@ Blog estático com VitePress, Vue 3 e TypeScript. Artigos em Markdown organizado
 
 A busca consulta título, resumo, tópico, tags e o conteúdo completo dos artigos, incluindo exemplos de código. Ignora maiúsculas e acentos e permite combinar palavras, mantendo o filtro de tópico selecionado. O índice é gerado a partir dos arquivos Markdown no build.
 
+A listagem mostra 12 artigos por página, com navegação anterior, próxima e por número. A busca consulta todos os artigos antes de paginar, e alterar a busca ou o tópico retorna à primeira página.
+
 A página inicial destaca o roteiro **Comece por aqui**, com primeiros passos e trilhas por tópico. Cada artigo oferece leitura anterior e próxima na sequência sugerida. A ordem editorial fica em `docs/.vitepress/theme/reading-paths.ts`; posts novos entram automaticamente ao fim da trilha correspondente, e tópicos novos ganham sua própria trilha. A listagem principal continua ordenada por data.
 
 ## Significados durante a leitura
