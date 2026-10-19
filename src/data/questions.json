@@ -1,0 +1,139 @@
+{
+  "categories": [
+    "Pessoal"
+  ],
+  "questions": [
+    {
+      "id": "Pessoal-Tell me about yourself",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "Tell me about yourself",
+      "answer": [
+        "Sure. I'm Caio. I'm a Senior Front-end Engineer from Brazil with over six years of experience.",
+        "I started my career in web design, building websites, and today I work mainly with Angular and TypeScript.",
+        "I have experience with large web applications, REST APIs, reusable components, responsive design, performance, and accessibility."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Fale um pouco sobre você",
+          "answer": [
+            "Claro. Eu sou o Caio, Senior Front-end Engineer do Brasil, com mais de seis anos de experiência.",
+            "Comecei minha carreira com web design, criando sites, e hoje trabalho principalmente com Angular e TypeScript.",
+            "Tenho experiência com aplicações web de grande porte, REST APIs, componentes reutilizáveis, design responsivo, performance e acessibilidade."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Pessoal-Tell me about your current job",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "Tell me about your current job",
+      "answer": [
+        "I work as a Senior Front-end Engineer.",
+        "Today, my main responsibility is to keep the Design System consistent across the application. I create and maintain reusable components to make sure the interface follows the same standards.",
+        "I also focus on accessibility, making the application easy to use for different users, and performance, to provide a fast and good experience.",
+        "I mainly work with Angular and TypeScript."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Fale sobre seu trabalho atual",
+          "answer": [
+            "Trabalho como Senior Front-end Engineer.",
+            "Hoje, minha principal responsabilidade é manter o Design System consistente em toda a aplicação. Crio e mantenho componentes reutilizáveis para garantir que a interface siga os mesmos padrões.",
+            "Também foco em acessibilidade e performance, para oferecer uma aplicação fácil de usar, rápida e agradável.",
+            "Trabalho principalmente com Angular e TypeScript."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Pessoal-Tell me about a complex project you worked on",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "Tell me about a complex project you worked on",
+      "answer": [
+        "We had many products, and they had different components. This was difficult to maintain.",
+        "We needed to use the same components in different products.",
+        "We created a Design System. I helped create simple components that we could use in many products.",
+        "In the end, we used the Design System in more than five products. We had less repeated code, the same design, and easier maintenance."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Fale sobre um projeto complexo em que você trabalhou",
+          "answer": [
+            "Tínhamos vários produtos, cada um com componentes diferentes. Isso era difícil de manter.",
+            "Precisávamos usar os mesmos componentes em produtos diferentes.",
+            "Criamos um Design System, e eu ajudei a desenvolver componentes simples que pudessem ser reutilizados em vários produtos.",
+            "No final, usamos o Design System em mais de cinco produtos. Reduzimos a duplicação de código, mantivemos o mesmo design e facilitamos a manutenção."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Pessoal-What is one of your strengths?",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "What is one of your strengths?",
+      "answer": [
+        "My main strength is problem solving.",
+        "When I have a problem, I try to understand the cause first and find a simple solution.",
+        "For example, I worked on performance problems by using lazy loading, reducing unnecessary API calls and optimizing images.",
+        "I like to understand the problem, find the best solution and make sure it works well for the users."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Qual é um dos seus pontos fortes?",
+          "answer": [
+            "Meu principal ponto forte é a resolução de problemas.",
+            "Quando encontro um problema, primeiro tento entender a causa e depois buscar uma solução simples.",
+            "Por exemplo, trabalhei em problemas de performance usando lazy loading, reduzindo chamadas desnecessárias à API e otimizando imagens.",
+            "Gosto de entender o problema, encontrar a melhor solução e garantir que ela funcione bem para as pessoas usuárias."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Pessoal-What is one of your weaknesses?",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "What is one of your weaknesses?",
+      "answer": [
+        "Sometimes I give too many technical details when I explain a problem.",
+        "I'm working on making my explanations simpler and more direct.",
+        "This helps me communicate better with the team."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Qual é um dos seus pontos fracos?",
+          "answer": [
+            "Às vezes, dou detalhes técnicos demais quando explico um problema.",
+            "Estou trabalhando para deixar minhas explicações mais simples e diretas.",
+            "Isso me ajuda a me comunicar melhor com a equipe."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Pessoal-Why should we hire you?",
+      "category": "Pessoal",
+      "topic": "Sobre mim",
+      "question": "Why should we hire you?",
+      "answer": [
+        "I believe my skills match this position very well.",
+        "I have strong experience with Angular, TypeScript and front-end development.",
+        "I believe I can use my experience to help the team."
+      ],
+      "translations": {
+        "pt": {
+          "question": "Por que deveríamos contratar você?",
+          "answer": [
+            "Acredito que minhas habilidades combinam muito bem com esta vaga.",
+            "Tenho bastante experiência com Angular, TypeScript e desenvolvimento front-end.",
+            "Acredito que posso usar minha experiência para ajudar a equipe."
+          ]
+        }
+      }
+    }
+  ]
+}
