@@ -4,6 +4,7 @@ import { data as posts } from '../posts.data'
 import { computed } from 'vue'
 import { formatDate } from '../utils'
 import StudyCheckbox from './StudyCheckbox.vue'
+import PostQuiz from './PostQuiz.vue'
 import { readingPaths, readingSequence } from '../reading-paths'
 
 const { page } = useData()
@@ -21,7 +22,7 @@ const pathIndex = computed(() => path.value?.posts.findIndex(item => item.url ==
     <header v-if="post" class="article-header">
       <div class="post-topline">
         <p class="eyebrow">{{ post.category }}</p>
-        <StudyCheckbox :url="post.url" :title="post.title" />
+        <StudyCheckbox :url="post.url" :title="post.title" :version="post.quizVersion" />
       </div>
       <h1>{{ post.title }}</h1>
       <p class="intro-description">{{ post.description }}</p>
@@ -31,6 +32,7 @@ const pathIndex = computed(() => path.value?.posts.findIndex(item => item.url ==
     </header>
     <p class="term-help">Dica de leitura: clique nas palavras com sublinhado pontilhado e “?” para ver o significado.</p>
     <Content class="prose" />
+    <PostQuiz v-if="post" :key="`${post.url}:${post.quizVersion}`" :url="post.url" :version="post.quizVersion" :questions="post.quiz" />
     <footer class="article-footer">
       <nav v-if="readingIndex >= 0" class="reading-pagination" aria-label="Sequência de leitura">
         <a v-if="previousPost" :href="withBase(previousPost.url)"><span>← Leitura anterior</span><strong>{{ previousPost.title }}</strong></a>

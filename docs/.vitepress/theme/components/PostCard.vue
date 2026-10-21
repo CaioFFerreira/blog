@@ -11,7 +11,7 @@ defineProps<{ post: Post; index: number }>()
   <article class="post-card">
     <div class="post-topline">
       <div class="post-meta"><span>{{ post.category }}</span><span>{{ String(index + 1).padStart(2, '0') }}</span></div>
-      <StudyCheckbox :url="post.url" :title="post.title" />
+      <StudyCheckbox :url="post.url" :title="post.title" :version="post.quizVersion" />
     </div>
     <h2><a class="post-card-link" :href="withBase(post.url)">{{ post.title }}</a></h2>
     <p>{{ post.description }}</p>

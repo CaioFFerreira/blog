@@ -8,6 +8,11 @@ tags:
 
 Apresente o problema e o contexto em que ele aparece.
 
+<!-- Antes de publicar, adicione pelo menos duas perguntas específicas deste artigo
+em docs/.vitepress/theme/quiz-bank.json, usando o nome deste arquivo sem .md como chave.
+Cada pergunta precisa de question, options, answer (índice começando em zero) e explanation.
+O quiz aparece automaticamente após o conteúdo; não crie uma seção manual. -->
+
 Use uma situação concreta para mostrar por que o assunto importa. Explique os termos necessários antes de usá-los para explicar outros conceitos. Se houver pré-requisitos, indique o que a pessoa precisa conhecer e um artigo de base para consultar.
 
 ## Entenda a decisão

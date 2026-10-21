@@ -27,7 +27,11 @@ O <TermDefinition term="token" definition="Aqui, é a chave que identifica a dep
 
 As explicações ajudam na consulta rápida e complementam a definição no texto. Não substitua explicações importantes apenas por tooltips.
 
-Cada card e o cabeçalho de cada artigo têm um check no canto superior direito para marcar o conteúdo como estudado. O progresso fica no `localStorage` deste navegador, sincronizado entre a listagem, o artigo e outras abas. Desmarque para voltar ao estado não estudado. Limpar os dados do navegador apaga o progresso; ele não é compartilhado entre dispositivos.
+Cada artigo termina com um quiz de duas perguntas específicas, com explicações após o envio e novas tentativas sem limite. É preciso acertar todas na mesma tentativa para receber o estado **Validado** no cabeçalho e no card. O link **Fazer quiz** leva diretamente às perguntas. Refazer um quiz para revisão não remove uma aprovação já conquistada.
+
+As aprovações ficam no `localStorage` deste navegador, isoladas pelo caminho base do site e sincronizadas na mesma aba e entre abas. Limpar os dados do navegador apaga o progresso; ele não é compartilhado entre dispositivos. Se o armazenamento estiver bloqueado, a aprovação funciona durante a visita e o quiz avisa que não foi salva. Marcações manuais da versão anterior não são convertidas em aprovações. Alterar as perguntas, as opções ou o gabarito invalida a aprovação anterior daquele artigo.
+
+O banco editorial fica em `docs/.vitepress/theme/quiz-bank.json`, com uma entrada por nome de arquivo sem `.md`. Ao criar um post, inclua pelo menos duas perguntas com `question`, `options`, `answer` (índice da alternativa correta, começando em zero) e `explanation`. As perguntas devem avaliar conceitos ou decisões explicados no texto. O build rejeita posts sem quiz, opções duplicadas, respostas fora das opções e perguntas sem explicação. `npm run test:quiz` verifica correção, validação dos dados e versionamento das aprovações.
 
 ## Desenvolvimento
 

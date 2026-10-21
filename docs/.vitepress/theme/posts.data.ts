@@ -1,6 +1,8 @@
 import { createContentLoader } from 'vitepress'
 import type { Post } from './types'
 import { topicLabel } from './topics'
+import quizBank from './quiz-bank.json'
+import { quizVersion, validateQuiz } from './quiz'
 
 declare const data: Post[]
 export { data }
@@ -28,7 +30,9 @@ export default createContentLoader('posts/**/*.md', {
         throw new Error(`Metadados inválidos em ${url}. Confira title, description, date, category e tags.`)
       }
       const content = (src ?? '').replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')
-      return { url, title, description, date, category, tags, content }
+      const slug = url.split('/').pop()!.replace(/\.html$/, '')
+      const quiz = validateQuiz((quizBank as Record<string, unknown>)[slug], url)
+      return { url, title, description, date, category, tags, content, quiz, quizVersion: quizVersion(quiz) }
     }).sort((first, second) => second.date.localeCompare(first.date))
   },
 })

@@ -1,3 +1,5 @@
+import type { QuizQuestion } from './quiz'
+
 export interface Post {
   url: string
   title: string
@@ -6,4 +8,6 @@ export interface Post {
   category: string
   tags: string[]
   content: string
+  quiz: QuizQuestion[]
+  quizVersion: string
 }

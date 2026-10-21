@@ -1,57 +1,66 @@
 import { computed, onMounted, onUnmounted, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import { useData } from 'vitepress'
+import { readApprovals } from '../quiz'
 
-const progressChanged = 'front-end-notes:study-progress'
+const progressChanged = 'front-end-notes:quiz-progress'
+const unsavedApprovals = new Map<string, Record<string, string>>()
 
-function readProgress(key: string): string[] {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(key) ?? '[]')
-    return Array.isArray(saved) ? saved.filter((url): url is string => typeof url === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-export function useStudyProgress(url: MaybeRefOrGetter<string>) {
+export function useStudyProgress(url: MaybeRefOrGetter<string>, version: MaybeRefOrGetter<string>) {
   const { site } = useData()
-  const storageKey = `front-end-notes:studied:${site.value.base}`
-  const studiedPosts = ref<string[]>([])
+  const storageKey = `front-end-notes:quiz-passed:v1:${site.value.base}`
+  const approvals = ref<Record<string, string>>({})
+  const storageAvailable = ref(true)
+
+  function readSaved() {
+    try {
+      return { ...readApprovals(localStorage.getItem(storageKey)), ...unsavedApprovals.get(storageKey) }
+    } catch {
+      storageAvailable.value = false
+      return { ...approvals.value, ...unsavedApprovals.get(storageKey) }
+    }
+  }
 
   function syncProgress() {
-    studiedPosts.value = readProgress(storageKey)
+    approvals.value = readSaved()
+  }
+
+  function handleProgress(event: Event) {
+    const detail = (event as CustomEvent<{ key: string; approvals: Record<string, string> }>).detail
+    if (detail?.key === storageKey) approvals.value = detail.approvals
   }
 
   function handleStorage(event: StorageEvent) {
-    if (event.key === storageKey || event.key === null) syncProgress()
+    if (event.key === storageKey || event.key === null) {
+      unsavedApprovals.delete(storageKey)
+      syncProgress()
+    }
   }
 
   onMounted(() => {
     syncProgress()
-    window.addEventListener(progressChanged, syncProgress)
+    window.addEventListener(progressChanged, handleProgress)
     window.addEventListener('storage', handleStorage)
   })
 
   onUnmounted(() => {
-    window.removeEventListener(progressChanged, syncProgress)
+    window.removeEventListener(progressChanged, handleProgress)
     window.removeEventListener('storage', handleStorage)
   })
 
-  const studied = computed(() => studiedPosts.value.includes(toValue(url)))
+  const studied = computed(() => approvals.value[toValue(url)] === toValue(version))
 
-  function setStudied(checked: boolean) {
-    const postUrl = toValue(url)
-    const next = new Set(studiedPosts.value)
-    if (checked) next.add(postUrl)
-    else next.delete(postUrl)
-    studiedPosts.value = [...next]
-
+  function markPassed() {
+    approvals.value = { ...readSaved(), [toValue(url)]: toValue(version) }
     try {
-      localStorage.setItem(storageKey, JSON.stringify(studiedPosts.value))
-      window.dispatchEvent(new Event(progressChanged))
+      localStorage.setItem(storageKey, JSON.stringify(approvals.value))
+      unsavedApprovals.delete(storageKey)
+      storageAvailable.value = true
     } catch {
-      return
+      storageAvailable.value = false
+      unsavedApprovals.set(storageKey, approvals.value)
     }
+    window.dispatchEvent(new CustomEvent(progressChanged, { detail: { key: storageKey, approvals: approvals.value } }))
   }
 
-  return { studied, setStudied }
+  return { studied, markPassed, storageAvailable }
 }

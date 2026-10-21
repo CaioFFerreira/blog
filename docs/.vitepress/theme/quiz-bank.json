@@ -1,0 +1,1942 @@
+{
+  "acessibilidade-formularios-erros-aria-live": [
+    {
+      "question": "Um campo está inválido. Como comunicar o erro de forma acessível?",
+      "options": [
+        "Mudar apenas a borda do campo para vermelho.",
+        "Associar uma mensagem em texto ao campo e indicar o estado inválido."
+      ],
+      "answer": 1,
+      "explanation": "A cor sozinha não explica o erro nem cria uma associação programática com o campo."
+    },
+    {
+      "question": "Uma confirmação chega sem exigir ação imediata. Como anunciá-la?",
+      "options": [
+        "Usar uma região de status sem deslocar o foco.",
+        "Levar o foco ao texto a cada atualização."
+      ],
+      "answer": 0,
+      "explanation": "Uma região de status permite anunciar mudanças sem interromper a tarefa em andamento."
+    }
+  ],
+  "acessibilidade-html-semantico-aria-nomes": [
+    {
+      "question": "Qual elemento usar para uma ação que abre filtros?",
+      "options": [
+        "Uma div com role=\"button\", sem tratar teclado.",
+        "Um button com nome claro."
+      ],
+      "answer": 1,
+      "explanation": "O botão nativo já oferece semântica, foco e ativação por teclado; role sozinho não adiciona comportamento."
+    },
+    {
+      "question": "Um campo tem placeholder. Ele ainda precisa de rótulo?",
+      "options": [
+        "Sim, de um rótulo persistente associado ao campo.",
+        "Não, o placeholder substitui o rótulo."
+      ],
+      "answer": 0,
+      "explanation": "O placeholder desaparece durante o preenchimento e não substitui uma label persistente."
+    }
+  ],
+  "acessibilidade-modais-dialog": [
+    {
+      "question": "Como abrir um dialog com comportamento modal nativo?",
+      "options": [
+        "Chamar showModal().",
+        "Adicionar somente o atributo open."
+      ],
+      "answer": 0,
+      "explanation": "showModal coloca o diálogo na top layer e torna o restante do documento inerte."
+    },
+    {
+      "question": "Ao fechar um modal, o que fazer com o foco?",
+      "options": [
+        "Devolvê-lo ao acionador ou a outro ponto coerente do fluxo.",
+        "Enviá-lo sempre ao início da página."
+      ],
+      "answer": 0,
+      "explanation": "O retorno de foco permite continuar a tarefa sem perder a posição anterior."
+    }
+  ],
+  "acessibilidade-tabelas": [
+    {
+      "question": "Como representar um cabeçalho de coluna em uma tabela simples?",
+      "options": [
+        "Usar th com scope=\"col\".",
+        "Usar td em negrito."
+      ],
+      "answer": 0,
+      "explanation": "A associação precisa de semântica HTML; aparência de cabeçalho não comunica essa relação."
+    },
+    {
+      "question": "Uma tabela oferece ordenação. Como expor a ação e o estado?",
+      "options": [
+        "Usar um botão no cabeçalho e atualizar aria-sort no cabeçalho ordenado.",
+        "Tornar o texto clicável e mudar apenas a cor."
+      ],
+      "answer": 0,
+      "explanation": "A ação precisa ser operável por teclado e o estado deve ser comunicado programaticamente."
+    }
+  ],
+  "acessibilidade-teclado-foco": [
+    {
+      "question": "A ordem do Tab ficou confusa após reorganizar a tela com CSS. O que revisar primeiro?",
+      "options": [
+        "Adicionar tabindex positivo a todos os controles.",
+        "A ordem dos elementos no DOM."
+      ],
+      "answer": 1,
+      "explanation": "A navegação sequencial depende principalmente da ordem do documento; índices positivos criam prioridades difíceis de manter."
+    },
+    {
+      "question": "Dar tabindex=\"0\" a uma div a transforma em botão?",
+      "options": [
+        "Sim, isso adiciona também Enter e Espaço.",
+        "Não, ela ainda precisa da semântica e do comportamento de ativação."
+      ],
+      "answer": 1,
+      "explanation": "Tabindex torna o elemento focável, mas não implementa o contrato de um botão."
+    }
+  ],
+  "acessibilidade-testes-screen-readers-axe": [
+    {
+      "question": "Um relatório do axe não encontrou erros. O fluxo está garantidamente acessível?",
+      "options": [
+        "Sim, a automação cobre toda a experiência.",
+        "Não, é preciso avaliar também as tarefas manualmente."
+      ],
+      "answer": 1,
+      "explanation": "Ferramentas detectam parte dos problemas; ordem, compreensão e conclusão do fluxo exigem avaliação humana."
+    },
+    {
+      "question": "O que registrar para reproduzir um teste com leitor de tela?",
+      "options": [
+        "Navegador, sistema, tecnologia assistiva, versões e passos da tarefa.",
+        "Somente a nota final da ferramenta."
+      ],
+      "answer": 0,
+      "explanation": "Combinações diferentes podem produzir resultados diferentes; o contexto torna o defeito reproduzível."
+    }
+  ],
+  "acessibilidade-wcag-contraste": [
+    {
+      "question": "Atender ao nível AA inclui quais critérios?",
+      "options": [
+        "Os critérios A e AA aplicáveis.",
+        "Somente os critérios que têm a etiqueta AA."
+      ],
+      "answer": 0,
+      "explanation": "Os níveis são cumulativos e a avaliação considera o escopo completo aplicável."
+    },
+    {
+      "question": "Como verificar o contraste de texto?",
+      "options": [
+        "Avaliar apenas se as duas cores parecem diferentes.",
+        "Medir a combinação real de texto e fundo, considerando as condições do critério."
+      ],
+      "answer": 1,
+      "explanation": "Contraste é uma relação de luminosidade; preferência visual não demonstra atendimento ao requisito."
+    }
+  ],
+  "angular-build-migracao": [
+    {
+      "question": "O que diferencia lazy loading de tree shaking?",
+      "options": [
+        "Ambos removem definitivamente todo módulo que não está na rota inicial.",
+        "Lazy loading adia código; tree shaking elimina código não necessário quando possível."
+      ],
+      "answer": 1,
+      "explanation": "Adiar o carregamento não equivale a remover código do produto final."
+    },
+    {
+      "question": "A compilação AOT garante que toda a aplicação funciona?",
+      "options": [
+        "Sim, um build AOT substitui testes de comportamento.",
+        "Não, ela antecipa a compilação e detecta erros, mas ainda são necessárias outras verificações."
+      ],
+      "answer": 1,
+      "explanation": "AOT analisa templates e código durante o build; isso não comprova todos os fluxos executados."
+    }
+  ],
+  "angular-change-detection-performance": [
+    {
+      "question": "Um componente OnPush pode ser verificado sem receber um novo input?",
+      "options": [
+        "Sim, eventos e signals usados na view também podem provocar verificação.",
+        "Não, somente mudanças de input provocam verificação."
+      ],
+      "answer": 0,
+      "explanation": "OnPush considera notificações além dos inputs, como eventos, signals e marcações de atualização."
+    },
+    {
+      "question": "Uma chave estável na lista reduz automaticamente a quantidade de elementos montados?",
+      "options": [
+        "Não, ela ajuda a preservar identidade; virtualização trata a quantidade montada.",
+        "Sim, ela monta apenas os elementos visíveis."
+      ],
+      "answer": 0,
+      "explanation": "Identidade e volume de DOM são problemas diferentes e exigem mecanismos diferentes."
+    }
+  ],
+  "angular-componentes-comunicacao": [
+    {
+      "question": "Como um componente filho pode comunicar uma ação ao pai?",
+      "options": [
+        "Emitindo um evento por um output com contrato claro.",
+        "Alterando diretamente o estado privado do pai."
+      ],
+      "answer": 0,
+      "explanation": "Inputs e outputs explicitam a troca de dados e mantêm as responsabilidades dos componentes claras."
+    },
+    {
+      "question": "Qual responsabilidade combina com um componente de apresentação?",
+      "options": [
+        "Coordenar obrigatoriamente todas as chamadas de rede da aplicação.",
+        "Exibir dados recebidos e comunicar intenções de interação."
+      ],
+      "answer": 1,
+      "explanation": "A separação apresentada distingue apresentação da coordenação de dados e efeitos."
+    }
+  ],
+  "angular-control-value-accessor": [
+    {
+      "question": "O formulário chama writeValue em um controle. O controle deve emitir onChange por causa disso?",
+      "options": [
+        "Sim, toda atualização recebida deve disparar uma alteração de usuário.",
+        "Não, writeValue atualiza a view a partir do modelo."
+      ],
+      "answer": 1,
+      "explanation": "Emitir onChange em writeValue pode criar realimentação; onChange comunica mudanças vindas do controle."
+    },
+    {
+      "question": "Qual papel de setDisabledState no controle customizado?",
+      "options": [
+        "Refletir o estado desabilitado na interação do controle.",
+        "Validar obrigatoriamente o valor enviado pelo formulário."
+      ],
+      "answer": 0,
+      "explanation": "O controle precisa respeitar disabled, além de implementar valor, alteração e toque."
+    }
+  ],
+  "angular-diretivas-pipes-lifecycle": [
+    {
+      "question": "Um pure pipe recebe o mesmo objeto com uma propriedade interna mutada. Ele sempre recalcula?",
+      "options": [
+        "Não, a identidade da entrada importa para a reavaliação.",
+        "Sim, pure pipes observam toda mutação profunda."
+      ],
+      "answer": 0,
+      "explanation": "Pure pipes não equivalem a observadores profundos de objetos."
+    },
+    {
+      "question": "Uma diretiva registra recursos com vida própria. Qual cuidado é necessário?",
+      "options": [
+        "Deixar o garbage collector encerrar qualquer timer ativo.",
+        "Encerrar os recursos quando o contexto for destruído."
+      ],
+      "answer": 1,
+      "explanation": "Timers e assinaturas podem continuar ativos e reter referências se não forem encerrados."
+    }
+  ],
+  "angular-formularios-validacao": [
+    {
+      "question": "Uma regra compara senha e confirmação. Onde ela se encaixa melhor?",
+      "options": [
+        "Em duas assinaturas independentes que se corrigem mutuamente.",
+        "Em um validador do grupo que contém os dois campos."
+      ],
+      "answer": 1,
+      "explanation": "A regra depende da relação entre campos e deve representar esse contrato conjunto."
+    },
+    {
+      "question": "Um formulário possui cinquenta campos. Isso exige cinquenta assinaturas manuais?",
+      "options": [
+        "Sim, todo campo precisa de uma assinatura própria.",
+        "Não, o desenho deve usar a estrutura do formulário e derivar o necessário."
+      ],
+      "answer": 1,
+      "explanation": "Quantidade de campos não determina quantidade de assinaturas; assinaturas desnecessárias aumentam manutenção."
+    }
+  ],
+  "angular-http-interceptors": [
+    {
+      "question": "Como decidir se um interceptor pode anexar um token?",
+      "options": [
+        "Anexar o token a toda URL que passar pelo HttpClient.",
+        "Conferir se o destino pertence às origens e rotas autorizadas."
+      ],
+      "answer": 1,
+      "explanation": "Um interceptor amplo pode vazar credenciais para destinos externos."
+    },
+    {
+      "question": "A ordem dos interceptors pode mudar o comportamento?",
+      "options": [
+        "Sim, eles formam uma cadeia com responsabilidades e ordem relevantes.",
+        "Não, a ordem é apenas uma preferência de organização do arquivo."
+      ],
+      "answer": 0,
+      "explanation": "Transformações, autenticação e tratamento de erros podem depender da posição na cadeia."
+    }
+  ],
+  "angular-injecao-dependencias": [
+    {
+      "question": "Um provider em root cria uma instância por componente?",
+      "options": [
+        "Sim, cada consumidor recebe uma instância própria.",
+        "Não, o escopo do provider determina o compartilhamento."
+      ],
+      "answer": 1,
+      "explanation": "Root não significa instância por consumidor; providers locais podem criar outro escopo."
+    },
+    {
+      "question": "Por que fornecer uma dependência em um componente?",
+      "options": [
+        "Para garantir que ela seja global em toda a aplicação.",
+        "Para limitar a instância e seu tempo de vida àquele contexto."
+      ],
+      "answer": 1,
+      "explanation": "A hierarquia de injetores define visibilidade e permite isolamento por contexto."
+    }
+  ],
+  "angular-renderizacao-hydration": [
+    {
+      "question": "O que a hidratação faz?",
+      "options": [
+        "Elimina a necessidade de executar JavaScript no navegador.",
+        "Reaproveita o HTML do servidor e conecta o comportamento no cliente."
+      ],
+      "answer": 1,
+      "explanation": "HTML pronto ajuda a apresentar conteúdo, mas a interação ainda exige trabalho no cliente."
+    },
+    {
+      "question": "Servidor e cliente geram estruturas diferentes na primeira renderização. Qual risco existe?",
+      "options": [
+        "Incompatibilidade na hidratação.",
+        "Somente uma diferença no tamanho do bundle."
+      ],
+      "answer": 0,
+      "explanation": "Hidratação pressupõe correspondência entre o HTML recebido e a estrutura esperada no cliente."
+    }
+  ],
+  "angular-rotas-guards-resolvers": [
+    {
+      "question": "Um guard no Angular protege sozinho os dados da API?",
+      "options": [
+        "Sim, impedir a navegação torna o endpoint inacessível.",
+        "Não, o servidor deve autorizar cada operação."
+      ],
+      "answer": 1,
+      "explanation": "O navegador está sob controle do cliente; guards organizam o fluxo, mas não substituem autorização."
+    },
+    {
+      "question": "Qual custo um resolver pode introduzir?",
+      "options": [
+        "Duplicar necessariamente todo o HTML da aplicação.",
+        "Adiar a ativação da rota enquanto os dados necessários chegam."
+      ],
+      "answer": 1,
+      "explanation": "Resolver carrega dados antes da ativação; erro e espera precisam de uma experiência definida."
+    }
+  ],
+  "angular-rxjs-operadores": [
+    {
+      "question": "Uma busca deve usar somente o termo mais recente. Qual operador corresponde a essa intenção?",
+      "options": [
+        "concatMap.",
+        "switchMap."
+      ],
+      "answer": 1,
+      "explanation": "switchMap troca a assinatura interna quando chega uma nova entrada; concatMap preserva a fila."
+    },
+    {
+      "question": "Uma segunda submissão deve ser ignorada enquanto a primeira está em andamento. Qual operador combina com isso?",
+      "options": [
+        "exhaustMap.",
+        "mergeMap."
+      ],
+      "answer": 0,
+      "explanation": "exhaustMap ignora novas entradas até a conclusão da operação interna; mergeMap permite concorrência."
+    }
+  ],
+  "angular-rxjs-recursos-viewmodel": [
+    {
+      "question": "Qual combinação serve para fontes contínuas que atualizam uma view com os valores mais recentes?",
+      "options": [
+        "forkJoin, mesmo se as fontes nunca completarem.",
+        "combineLatest."
+      ],
+      "answer": 1,
+      "explanation": "combineLatest combina valores após cada fonte emitir; forkJoin espera a conclusão de todas."
+    },
+    {
+      "question": "Compartilhar uma assinatura define sozinho a política completa de cache?",
+      "options": [
+        "Não, expiração, invalidação e escopo ainda precisam de decisões.",
+        "Sim, shareReplay resolve qualquer necessidade de cache."
+      ],
+      "answer": 0,
+      "explanation": "Reutilizar emissões não define identidade, validade ou momento de atualização dos dados."
+    }
+  ],
+  "angular-signals-estado": [
+    {
+      "question": "Como representar um total que depende de outros signals?",
+      "options": [
+        "Com um valor derivado por computed.",
+        "Copiando o total manualmente em vários effects."
+      ],
+      "answer": 0,
+      "explanation": "Derivar o valor evita manter duas fontes de verdade sincronizadas manualmente."
+    },
+    {
+      "question": "Quando uma store passa a ajudar?",
+      "options": [
+        "Sempre que existe uma variável em um componente.",
+        "Quando coordena estado e transições compartilhados com responsabilidade clara."
+      ],
+      "answer": 1,
+      "explanation": "Uma store tem custo e deve responder ao escopo e às transições reais do produto."
+    }
+  ],
+  "angular-telemetria-workers": [
+    {
+      "question": "Qual trabalho é um candidato a Web Worker?",
+      "options": [
+        "Um cálculo pesado de CPU que pode ser separado da interface.",
+        "Qualquer chamada HTTP, pois fetch sempre bloqueia a interface."
+      ],
+      "answer": 0,
+      "explanation": "Workers ajudam com CPU; esperar a rede já pode acontecer de forma assíncrona."
+    },
+    {
+      "question": "Um worker recebe dados mais rápido do que processa. O que precisa existir?",
+      "options": [
+        "Uma política de fila, descarte ou agregação conforme o contrato.",
+        "Uma fila sem limite para não perder capacidade."
+      ],
+      "answer": 0,
+      "explanation": "Transferir trabalho sem controlar entrada pode trocar travamento por memória crescente e resultados atrasados."
+    }
+  ],
+  "angular-testes-acessibilidade": [
+    {
+      "question": "Como testar um componente pelo contrato de uso?",
+      "options": [
+        "Verificar apenas nomes de métodos privados.",
+        "Interagir com controles e verificar o resultado observável."
+      ],
+      "answer": 1,
+      "explanation": "O teste deve proteger comportamento percebido, permitindo mudanças internas sem quebrar a suíte."
+    },
+    {
+      "question": "Usar Angular garante acessibilidade dos componentes?",
+      "options": [
+        "Sim, o framework corrige automaticamente qualquer template.",
+        "Não, ainda é preciso verificar semântica, teclado, foco e feedback."
+      ],
+      "answer": 1,
+      "explanation": "Acessibilidade depende dos contratos da interface, mesmo quando há recursos oferecidos pelo framework."
+    }
+  ],
+  "arquitetura-dependency-inversion-solid": [
+    {
+      "question": "Na inversão de dependência, quem orienta o contrato de uma integração?",
+      "options": [
+        "A obrigação de expor todos os detalhes do fornecedor.",
+        "A necessidade do código que usa a integração."
+      ],
+      "answer": 1,
+      "explanation": "O contrato permite ao caso de uso depender de uma abstração coerente com sua necessidade."
+    },
+    {
+      "question": "Toda função precisa ganhar uma interface e um adaptador?",
+      "options": [
+        "Sim, mais interfaces significam automaticamente mais qualidade.",
+        "Não, a abstração deve responder a uma fronteira ou variação real."
+      ],
+      "answer": 1,
+      "explanation": "Abstrações sem propósito adicionam indireção e manutenção sem benefício demonstrável."
+    }
+  ],
+  "arquitetura-design-system-composicao": [
+    {
+      "question": "Um componente acumula flags incompatíveis. Qual alternativa o artigo propõe?",
+      "options": [
+        "Adicionar uma flag para cada combinação possível.",
+        "Compor partes com responsabilidades e limites explícitos."
+      ],
+      "answer": 1,
+      "explanation": "Composição pode evitar uma API com combinações difíceis de entender e testar."
+    },
+    {
+      "question": "A acessibilidade de um componente compartilhado pertence a quem?",
+      "options": [
+        "Ao contrato do componente e à verificação de sua integração.",
+        "Somente à última equipe que consumir o componente."
+      ],
+      "answer": 0,
+      "explanation": "Nome, teclado e estados fazem parte do comportamento reutilizado, não apenas da aparência."
+    }
+  ],
+  "arquitetura-evolucao-overengineering": [
+    {
+      "question": "Qual ponto de partida ajuda a escolher uma arquitetura?",
+      "options": [
+        "Restrições e resultados necessários do produto.",
+        "A tecnologia mais sofisticada disponível."
+      ],
+      "answer": 0,
+      "explanation": "Escala, equipe e operação devem justificar a complexidade adotada."
+    },
+    {
+      "question": "Como tornar uma migração arquitetural verificável?",
+      "options": [
+        "Substituir toda a aplicação antes de obter feedback.",
+        "Entregar fatias com critérios de resultado e possibilidade de retorno."
+      ],
+      "answer": 1,
+      "explanation": "Fatias menores permitem comparar comportamento e limitar o risco de cada mudança."
+    }
+  ],
+  "arquitetura-features-domain-boundaries": [
+    {
+      "question": "Uma feature é necessariamente uma única tela?",
+      "options": [
+        "Não, ela pode reunir uma capacidade que atravessa telas.",
+        "Sim, cada rota define obrigatoriamente um domínio."
+      ],
+      "answer": 0,
+      "explanation": "Fronteiras devem acompanhar responsabilidades e conceitos do negócio, não só a navegação."
+    },
+    {
+      "question": "Como sustentar uma regra de dependências entre módulos?",
+      "options": [
+        "Confiar apenas nos nomes das pastas.",
+        "Definir os contratos e verificar imports e fronteiras com ferramentas e revisão."
+      ],
+      "answer": 1,
+      "explanation": "Uma estrutura visual não impede dependências indevidas; a regra precisa ser verificável."
+    }
+  ],
+  "arquitetura-micro-frontends": [
+    {
+      "question": "Qual motivo sustenta melhor um piloto de micro-frontends?",
+      "options": [
+        "A existência de vários componentes na aplicação.",
+        "Necessidade real de autonomia de equipes e entregas com fronteiras definidas."
+      ],
+      "answer": 1,
+      "explanation": "Micro-frontends acrescentam custos de integração e operação; o benefício organizacional precisa compensar."
+    },
+    {
+      "question": "O que avaliar além da independência de deploy?",
+      "options": [
+        "Somente o número de repositórios criados.",
+        "Performance, dependências compartilhadas e experiência integrada."
+      ],
+      "answer": 1,
+      "explanation": "A autonomia técnica não pode ignorar o custo final percebido pela pessoa que usa o produto."
+    }
+  ],
+  "arquitetura-monorepos": [
+    {
+      "question": "Colocar projetos no mesmo repositório obriga um deploy único?",
+      "options": [
+        "Sim, todo monorepo produz um único artefato.",
+        "Não, organização do código e publicação são decisões separadas."
+      ],
+      "answer": 1,
+      "explanation": "Produtos podem ter pipelines e artefatos independentes mesmo compartilhando um repositório."
+    },
+    {
+      "question": "Para um cache de build ser correto, o que a chave precisa representar?",
+      "options": [
+        "Somente o nome do projeto.",
+        "As entradas relevantes, incluindo configuração e dependências da tarefa."
+      ],
+      "answer": 1,
+      "explanation": "Ignorar uma entrada que altera a saída pode reutilizar um resultado incompatível."
+    }
+  ],
+  "arquitetura-state-management": [
+    {
+      "question": "Um total pode ser calculado a partir dos itens. Como modelá-lo?",
+      "options": [
+        "Como valor derivado dos itens.",
+        "Como outro estado independente atualizado manualmente."
+      ],
+      "answer": 0,
+      "explanation": "Duplicar informação derivável cria risco de inconsistência entre fontes de verdade."
+    },
+    {
+      "question": "Em SSR, um estado de usuário deve ser compartilhado globalmente entre requisições?",
+      "options": [
+        "Não, o escopo precisa isolar os dados de cada requisição.",
+        "Sim, para reaproveitar a sessão entre visitantes."
+      ],
+      "answer": 0,
+      "explanation": "Um estado global inadequado pode misturar dados de pessoas diferentes."
+    }
+  ],
+  "backend-filas-workers-logs": [
+    {
+      "question": "Uma mensagem pode ser entregue mais de uma vez. Como o consumidor deve agir?",
+      "options": [
+        "Presumir que toda entrega representa uma operação nova.",
+        "Tolerar repetição com idempotência adequada à operação."
+      ],
+      "answer": 1,
+      "explanation": "Filas podem repetir entregas; o efeito de negócio precisa evitar duplicações indevidas."
+    },
+    {
+      "question": "A confirmação de publicação prova que o documento já foi gerado?",
+      "options": [
+        "Não, aceitação da mensagem e conclusão do trabalho são etapas diferentes.",
+        "Sim, o broker confirma o resultado final de negócio."
+      ],
+      "answer": 0,
+      "explanation": "É preciso acompanhar consumo, processamento e resultado, além da publicação."
+    }
+  ],
+  "backend-graphql-resolvers": [
+    {
+      "question": "Uma consulta retorna uma lista e cada item provoca outra consulta ao banco. Qual problema pode existir?",
+      "options": [
+        "Ausência de JSON na resposta.",
+        "N+1, tratado com estratégia de carregamento e medição."
+      ],
+      "answer": 1,
+      "explanation": "Uma requisição GraphQL pode esconder muitas consultas internas; batching pode reduzir esse custo."
+    },
+    {
+      "question": "Uma resposta GraphQL pode conter dados e erros juntos?",
+      "options": [
+        "Sim, resultados parciais podem coexistir com erros.",
+        "Não, qualquer erro elimina obrigatoriamente todos os dados."
+      ],
+      "answer": 0,
+      "explanation": "O cliente precisa interpretar o contrato de dados parciais e erros em vez de olhar apenas o status HTTP."
+    }
+  ],
+  "backend-identidade-jwt-oauth-oidc": [
+    {
+      "question": "Decodificar o conteúdo de um JWT valida sua autenticidade?",
+      "options": [
+        "Sim, se o JSON contém um identificador de usuário.",
+        "Não, é preciso verificar assinatura e requisitos como emissor, destinatário e validade."
+      ],
+      "answer": 1,
+      "explanation": "Decodificação apenas lê o conteúdo; validação estabelece se o token é aceitável naquele contexto."
+    },
+    {
+      "question": "Um ID token deve ser usado indiscriminadamente como access token da API?",
+      "options": [
+        "Não, eles têm finalidades e destinatários diferentes.",
+        "Sim, qualquer token emitido no login é intercambiável."
+      ],
+      "answer": 0,
+      "explanation": "Identidade do usuário para o cliente e autorização de acesso a um recurso têm contratos distintos."
+    }
+  ],
+  "backend-redis-cache": [
+    {
+      "question": "O que acontece num cache-aside quando a chave não existe?",
+      "options": [
+        "A aplicação consulta a fonte e pode preencher o cache.",
+        "O cache descobre automaticamente a consulta correta no banco."
+      ],
+      "answer": 0,
+      "explanation": "A aplicação coordena a leitura da fonte e o preenchimento, incluindo falhas e concorrência."
+    },
+    {
+      "question": "Expiração e eviction são a mesma coisa?",
+      "options": [
+        "Não, expiração considera validade temporal; eviction pode remover dados por pressão de memória.",
+        "Sim, ambos significam exclusivamente que o TTL terminou."
+      ],
+      "answer": 0,
+      "explanation": "Um item pode sair do cache antes de seu TTL conforme a política e a disponibilidade de memória."
+    }
+  ],
+  "backend-requisicao-rest-gateway": [
+    {
+      "question": "Uma API stateless não pode usar banco de dados?",
+      "options": [
+        "Pode usar banco; a restrição trata do contexto necessário para interpretar cada requisição.",
+        "Não pode armazenar qualquer informação no servidor."
+      ],
+      "answer": 0,
+      "explanation": "Stateless não significa ausência de persistência de recursos."
+    },
+    {
+      "question": "Responder JSON torna uma API automaticamente REST?",
+      "options": [
+        "Não, formato da resposta não define todas as restrições arquiteturais.",
+        "Sim, JSON é a única exigência de REST."
+      ],
+      "answer": 0,
+      "explanation": "Métodos, recursos e demais restrições importam; REST não é sinônimo de transporte de JSON."
+    }
+  ],
+  "backend-sql-indices": [
+    {
+      "question": "Um índice melhora toda consulta e não tem custo de escrita?",
+      "options": [
+        "Sim, deve-se indexar toda coluna para maximizar desempenho.",
+        "Não, depende da consulta e acrescenta custos de armazenamento e manutenção."
+      ],
+      "answer": 1,
+      "explanation": "A utilidade depende de seletividade e plano de execução; escritas também atualizam índices."
+    },
+    {
+      "question": "Como avaliar a otimização de uma consulta?",
+      "options": [
+        "Analisar o plano e medir com volume e filtros representativos.",
+        "Concluir pelo tamanho do texto SQL."
+      ],
+      "answer": 0,
+      "explanation": "Uma consulta curta pode ser cara; o plano e as medições mostram o trabalho realizado."
+    }
+  ],
+  "backend-transacoes-concorrencia": [
+    {
+      "question": "Por que uma condição crítica deve ser ligada à escrita?",
+      "options": [
+        "Para evitar que outra operação invalide a condição entre leitura e atualização.",
+        "Apenas para reduzir o número de linhas de código."
+      ],
+      "answer": 0,
+      "explanation": "Concorrência pode tornar inseguro verificar saldo ou estoque e escrever depois sem proteção adequada."
+    },
+    {
+      "question": "Uma transação SQL torna automaticamente atômico um pagamento externo?",
+      "options": [
+        "Não, a integração externa exige um protocolo de coordenação e recuperação.",
+        "Sim, qualquer chamada dentro da função participa do rollback do banco."
+      ],
+      "answer": 0,
+      "explanation": "O serviço externo não participa por mágica da mesma transação local."
+    }
+  ],
+  "menos-responsabilidades-mais-clareza": [
+    {
+      "question": "Qual vantagem de separar a leitura do input da função de busca?",
+      "options": [
+        "Eliminar a necessidade de definir o comportamento esperado.",
+        "Testar a regra com dados explícitos sem depender do DOM."
+      ],
+      "answer": 1,
+      "explanation": "A regra fica mais fácil de compreender e verificar quando recebe apenas os dados necessários."
+    },
+    {
+      "question": "Como confirmar que uma refatoração preservou o comportamento?",
+      "options": [
+        "Conferir apenas se foram criados mais arquivos.",
+        "Comparar antes e depois usando os mesmos casos relevantes."
+      ],
+      "answer": 1,
+      "explanation": "A mudança de estrutura deve preservar resultados, inclusive nos limites já definidos."
+    }
+  ],
+  "por-onde-comecar": [
+    {
+      "question": "Como aproveitar um exemplo ao estudar?",
+      "options": [
+        "Copiar sem observar as entradas e saídas.",
+        "Executar, prever o resultado e alterar uma parte para observar o efeito."
+      ],
+      "answer": 1,
+      "explanation": "Experimentação conecta o texto a um comportamento verificável e revela dúvidas concretas."
+    },
+    {
+      "question": "É necessário dominar todos os assuntos avançados antes de criar uma página simples?",
+      "options": [
+        "Não, comece pelos fundamentos e avance conforme as tarefas.",
+        "Sim, arquitetura distribuída é um pré-requisito para qualquer HTML."
+      ],
+      "answer": 0,
+      "explanation": "O roteiro propõe uma progressão de fundamentos para problemas mais amplos."
+    }
+  ],
+  "decisao-escopo-custo-crescimento": [
+    {
+      "question": "Como tornar a pergunta sobre crescimento útil para uma decisão?",
+      "options": [
+        "Exigir que a solução suporte qualquer escala indefinidamente.",
+        "Definir carga, prazo, limites e sinais mensuráveis."
+      ],
+      "answer": 1,
+      "explanation": "Uma hipótese mensurável permite comparar alternativas e estabelecer quando revisar a decisão."
+    },
+    {
+      "question": "Qual custo deve entrar na comparação de soluções?",
+      "options": [
+        "Somente o preço da primeira implementação.",
+        "Entrega inicial, manutenção e operação ao longo do tempo."
+      ],
+      "answer": 1,
+      "explanation": "O custo total inclui evolução, suporte e responsabilidades depois da entrega."
+    }
+  ],
+  "decisao-front-backend-dados": [
+    {
+      "question": "Quem deve ter a autoridade sobre o desconto final da compra?",
+      "options": [
+        "O backend, validando a regra e os dados recebidos.",
+        "O navegador, porque já calculou a prévia."
+      ],
+      "answer": 0,
+      "explanation": "A prévia melhora a experiência, mas o servidor precisa decidir e validar a operação real."
+    },
+    {
+      "question": "Ocultar um campo sensível na interface impede sua exposição pela API?",
+      "options": [
+        "Não, o servidor deve construir uma resposta com os campos permitidos.",
+        "Sim, basta não renderizar esse campo."
+      ],
+      "answer": 0,
+      "explanation": "Dados recebidos continuam acessíveis no cliente mesmo quando não aparecem na tela."
+    }
+  ],
+  "decisao-migracao-legado": [
+    {
+      "question": "Durante a convivência entre implementações, o que definir explicitamente?",
+      "options": [
+        "A fonte de verdade de cada informação e o caminho de escrita.",
+        "Somente qual interface tem a aparência mais nova."
+      ],
+      "answer": 0,
+      "explanation": "Sem autoridade definida, as duas versões podem produzir divergências e gravações conflitantes."
+    },
+    {
+      "question": "Desligar uma feature flag garante rollback seguro após mudanças nos dados?",
+      "options": [
+        "Não, é preciso avaliar compatibilidade e recuperação dos dados.",
+        "Sim, a flag desfaz automaticamente toda mudança persistida."
+      ],
+      "answer": 0,
+      "explanation": "Retorno envolve estado e contratos, não só a seleção da interface."
+    }
+  ],
+  "decisao-produtos-compartilhamento": [
+    {
+      "question": "Três produtos usam um formulário parecido. Isso exige micro-frontends?",
+      "options": [
+        "Sim, repetição visual exige deploy independente em runtime.",
+        "Não, compare duplicação controlada, biblioteca e outras alternativas conforme a necessidade."
+      ],
+      "answer": 1,
+      "explanation": "Compartilhamento de código e autonomia de publicação são decisões diferentes."
+    },
+    {
+      "question": "Publicar uma nova versão da biblioteca prova compatibilidade dos consumidores?",
+      "options": [
+        "Não, contratos e testes dos consumidores precisam verificar a mudança.",
+        "Sim, o número da versão substitui a verificação."
+      ],
+      "answer": 0,
+      "explanation": "Versionamento comunica intenção; testes e validação fornecem evidência."
+    }
+  ],
+  "decisao-query-estado-global": [
+    {
+      "question": "Quando uma biblioteca de query tende a acrescentar valor?",
+      "options": [
+        "Ao substituir toda variável local de interface.",
+        "Ao coordenar dados remotos, invalidação, atualização e deduplicação."
+      ],
+      "answer": 1,
+      "explanation": "Dados do servidor têm ciclo próprio, diferente do estado de um menu ou de um campo."
+    },
+    {
+      "question": "Uma biblioteca de query decide sozinha como resolver edições concorrentes?",
+      "options": [
+        "Não, conflitos de edição exigem uma regra do produto e apoio do servidor.",
+        "Sim, um refetch escolhe automaticamente a intenção correta do usuário."
+      ],
+      "answer": 0,
+      "explanation": "Atualizar o cache não resolve por si só qual versão de uma edição deve prevalecer."
+    }
+  ],
+  "decisao-ssr-csr-estatico": [
+    {
+      "question": "Um blog com conteúdo conhecido no build precisa obrigatoriamente de SSR por requisição?",
+      "options": [
+        "Sim, todo conteúdo público exige um servidor renderizando cada visita.",
+        "Não, geração estática pode atender com menos operação."
+      ],
+      "answer": 1,
+      "explanation": "A estratégia deve responder à atualização do conteúdo e às necessidades reais do produto."
+    },
+    {
+      "question": "Receber HTML pronto garante interação imediata?",
+      "options": [
+        "Não, ainda pode haver download e execução de JavaScript e hidratação.",
+        "Sim, o HTML elimina qualquer custo no cliente."
+      ],
+      "answer": 0,
+      "explanation": "Conteúdo visível e interface pronta para interagir são momentos diferentes."
+    }
+  ],
+  "devops-ci-cd-actions-gitlab": [
+    {
+      "question": "Qual a diferença entre cache e artefato em um pipeline?",
+      "options": [
+        "Ambos identificam obrigatoriamente a mesma release imutável.",
+        "Cache reaproveita trabalho; artefato registra uma saída produzida."
+      ],
+      "answer": 1,
+      "explanation": "Cache acelera a execução, enquanto artefatos permitem transportar e inspecionar resultados."
+    },
+    {
+      "question": "Um pipeline verde prova sozinho que o produto atende ao usuário?",
+      "options": [
+        "Não, ele comprova apenas as verificações que realmente executou.",
+        "Sim, passar no build valida todos os contratos."
+      ],
+      "answer": 0,
+      "explanation": "As verificações precisam representar o projeto e não substituem toda revisão de comportamento."
+    }
+  ],
+  "devops-cloud-dns-cdn": [
+    {
+      "question": "Apontar o DNS publica automaticamente o código do site?",
+      "options": [
+        "Sim, o DNS armazena o build da aplicação.",
+        "Não, o conteúdo precisa estar disponível no destino configurado."
+      ],
+      "answer": 1,
+      "explanation": "DNS resolve nomes; hospedagem e distribuição do conteúdo pertencem a outras camadas."
+    },
+    {
+      "question": "Em um deploy estático, por que publicar os recursos antes do HTML que os referencia?",
+      "options": [
+        "Para evitar que o novo HTML aponte para arquivos ainda indisponíveis.",
+        "Para eliminar a necessidade de cache."
+      ],
+      "answer": 0,
+      "explanation": "A ordem da publicação deve manter válidas as referências encontradas pelos navegadores."
+    }
+  ],
+  "devops-docker-registry": [
+    {
+      "question": "Qual benefício de um build Docker em múltiplos estágios?",
+      "options": [
+        "Garantir que qualquer imagem resultante não tenha vulnerabilidades.",
+        "Separar ferramentas de build dos arquivos necessários em runtime."
+      ],
+      "answer": 1,
+      "explanation": "A separação reduz o conteúdo final, mas não substitui revisão e atualização das dependências."
+    },
+    {
+      "question": "Uma tag latest identifica de forma imutável uma imagem?",
+      "options": [
+        "Sim, latest é sempre um identificador permanente.",
+        "Não, o digest identifica o conteúdo e tags podem mudar."
+      ],
+      "answer": 1,
+      "explanation": "Rastreabilidade de release deve registrar o conteúdo promovido, não confiar só em uma tag mutável."
+    }
+  ],
+  "devops-env-secrets": [
+    {
+      "question": "Uma variável de ambiente inserida no bundle do navegador continua secreta?",
+      "options": [
+        "Sim, se o nome da variável contiver SECRET.",
+        "Não, o conteúdo entregue ao cliente pode ser inspecionado."
+      ],
+      "answer": 1,
+      "explanation": "O momento de configuração não torna confidencial o valor que foi incluído no arquivo público."
+    },
+    {
+      "question": "Mudar uma variável no container reescreve automaticamente um JavaScript já gerado?",
+      "options": [
+        "Não, é necessário um mecanismo explícito de configuração em runtime ou um novo build.",
+        "Sim, o navegador atualiza automaticamente os valores do bundle."
+      ],
+      "answer": 0,
+      "explanation": "Build-time e runtime são etapas distintas; arquivos já gerados não são reescritos por essa mudança."
+    }
+  ],
+  "devops-git-colaboracao": [
+    {
+      "question": "Você corrigiu login e alterou cores sem relação. Como preparar os commits?",
+      "options": [
+        "Juntar tudo em um commit chamado ajustes.",
+        "Separar as mudanças por propósito e revisar o stage."
+      ],
+      "answer": 1,
+      "explanation": "Commits focados facilitam entender, revisar e reverter uma mudança sem envolver outra."
+    },
+    {
+      "question": "O que git diff --staged permite revisar?",
+      "options": [
+        "O conteúdo preparado para o próximo commit.",
+        "Somente o que já foi enviado ao repositório remoto."
+      ],
+      "answer": 0,
+      "explanation": "O stage representa o próximo snapshot; edições posteriores ao git add podem permanecer fora dele."
+    }
+  ],
+  "devops-linux-nginx": [
+    {
+      "question": "Antes de recarregar uma configuração Nginx, o que fazer?",
+      "options": [
+        "Reiniciar o host sem verificar a configuração.",
+        "Validar a sintaxe com nginx -t e conferir os caminhos relevantes."
+      ],
+      "answer": 1,
+      "explanation": "Uma verificação prévia ajuda a detectar erros antes de aplicar a mudança ao serviço."
+    },
+    {
+      "question": "Um recurso estático retorna 404. Qual investigação é útil?",
+      "options": [
+        "Alterar permissões indiscriminadamente para liberar tudo.",
+        "Conferir URL, root, caminho base, arquivo publicado e logs."
+      ],
+      "answer": 1,
+      "explanation": "O diagnóstico precisa localizar a camada da falha; permissões amplas não corrigem caminhos incorretos."
+    }
+  ],
+  "devops-release-rollback-observabilidade": [
+    {
+      "question": "Qual informação ajuda a identificar a versão entregue?",
+      "options": [
+        "Commit, pipeline, artefato e configuração associados à release.",
+        "Somente o horário em que alguém clicou em publicar."
+      ],
+      "answer": 0,
+      "explanation": "O código é uma parte da identidade da release; artefato e configuração também afetam o resultado."
+    },
+    {
+      "question": "Por que guardar artefatos anteriores para rollback?",
+      "options": [
+        "Porque reconstruir sempre produz exatamente os mesmos bytes.",
+        "Para restaurar uma saída conhecida sem depender de reconstruí-la durante o incidente."
+      ],
+      "answer": 1,
+      "explanation": "Dependências e configurações podem mudar; um build antigo refeito pode resultar em outra saída."
+    }
+  ],
+  "javascript-debounce-throttle": [
+    {
+      "question": "Qual técnica espera uma pausa nas chamadas antes de executar a busca?",
+      "options": [
+        "Debounce.",
+        "Throttle."
+      ],
+      "answer": 0,
+      "explanation": "Debounce reinicia a espera a cada chamada; throttle limita a frequência durante uma sequência."
+    },
+    {
+      "question": "Aplicar debounce impede respostas antigas de sobrescreverem uma busca nova?",
+      "options": [
+        "Sim, debounce garante a ordem das respostas da rede.",
+        "Não, também é preciso controlar cancelamento ou a validade da resposta."
+      ],
+      "answer": 1,
+      "explanation": "Reduzir chamadas não controla o tempo de conclusão de requisições já iniciadas."
+    }
+  ],
+  "javascript-dom-elementos-eventos": [
+    {
+      "question": "Por que conferir o resultado de querySelector antes de usá-lo?",
+      "options": [
+        "Porque querySelector sempre cria uma cópia desconectada do elemento.",
+        "O elemento pode não existir ou não ter o tipo esperado."
+      ],
+      "answer": 1,
+      "explanation": "Uma seleção pode resultar em null e o contrato do elemento precisa ser validado antes do uso."
+    },
+    {
+      "question": "Qual vantagem da delegação de eventos em uma lista dinâmica?",
+      "options": [
+        "Um listener no ancestral pode tratar ações dos itens, inclusive novos.",
+        "Ela impede qualquer propagação de eventos pela árvore."
+      ],
+      "answer": 0,
+      "explanation": "A delegação aproveita a propagação e identifica o alvo relevante sem um listener por item."
+    }
+  ],
+  "javascript-es6-destructuring-spread-rest": [
+    {
+      "question": "O spread de um objeto cria cópias independentes de todos os objetos internos?",
+      "options": [
+        "Não, a cópia é rasa e referências internas podem ser compartilhadas.",
+        "Sim, o spread faz uma cópia profunda."
+      ],
+      "answer": 0,
+      "explanation": "Somente o primeiro nível é copiado; mutar um objeto interno compartilhado afeta ambas as visões."
+    },
+    {
+      "question": "Qual operador fornece um padrão sem substituir zero ou false?",
+      "options": [
+        "O operador lógico OR.",
+        "Nullish coalescing, usando dois pontos de interrogação."
+      ],
+      "answer": 1,
+      "explanation": "Nullish coalescing usa o padrão apenas para null e undefined; OR também considera outros valores falsy."
+    }
+  ],
+  "javascript-escopo-hoisting-closures": [
+    {
+      "question": "Uma closure mantém acesso a qual ambiente?",
+      "options": [
+        "Somente às variáveis do lugar onde a função é chamada.",
+        "Ao ambiente léxico em que a função foi criada."
+      ],
+      "answer": 1,
+      "explanation": "O escopo léxico depende da criação da função, permitindo manter acesso ao estado externo."
+    },
+    {
+      "question": "É seguro ler uma variável let antes de sua declaração ser inicializada?",
+      "options": [
+        "Sim, let sempre retorna undefined antes da declaração.",
+        "Não, o acesso ocorre na zona morta temporal e gera erro."
+      ],
+      "answer": 1,
+      "explanation": "Hoisting não implica que todas as declarações possam ser usadas antes da inicialização."
+    }
+  ],
+  "javascript-event-loop-promises-async-await": [
+    {
+      "question": "Após a pilha atual terminar, qual costuma executar antes: uma reação de Promise já agendada ou um timer?",
+      "options": [
+        "A reação de Promise, na fila de microtasks.",
+        "O timer, porque sempre tem prioridade sobre Promises."
+      ],
+      "answer": 0,
+      "explanation": "O navegador processa microtasks antes de avançar para a próxima tarefa, nas condições do exemplo."
+    },
+    {
+      "question": "Usar await transforma um cálculo pesado em trabalho fora da thread principal?",
+      "options": [
+        "Não, o cálculo síncrono ainda pode bloquear a thread.",
+        "Sim, async move automaticamente o código para outra thread."
+      ],
+      "answer": 0,
+      "explanation": "Async e await organizam espera e continuação; não transferem trabalho de CPU para um worker."
+    }
+  ],
+  "javascript-localstorage-sessionstorage-cookies": [
+    {
+      "question": "Que formato localStorage usa para chaves e valores?",
+      "options": [
+        "Strings; objetos exigem serialização e leitura cuidadosa.",
+        "Objetos JavaScript preservados automaticamente com seus métodos."
+      ],
+      "answer": 0,
+      "explanation": "JSON pode representar dados, mas leitura, formato e falhas de armazenamento precisam ser tratados."
+    },
+    {
+      "question": "O evento storage é disparado automaticamente na mesma aba que fez a escrita?",
+      "options": [
+        "Sim, sempre notifica primeiro o documento que chamou setItem.",
+        "Não, ele notifica outros documentos elegíveis que compartilham o armazenamento."
+      ],
+      "answer": 1,
+      "explanation": "A aba que escreve precisa atualizar seu próprio estado ou emitir uma notificação local."
+    }
+  ],
+  "javascript-modulos-es": [
+    {
+      "question": "Um import nomeado é apenas uma cópia fixa do valor no instante da importação?",
+      "options": [
+        "Não, imports são vínculos vivos com os exports.",
+        "Sim, mudanças no módulo de origem nunca podem ser observadas."
+      ],
+      "answer": 0,
+      "explanation": "O vínculo acompanha o valor exportado, respeitando as regras dos módulos."
+    },
+    {
+      "question": "Qual recurso permite carregar um módulo sob demanda?",
+      "options": [
+        "import() dinâmico.",
+        "Somente uma declaração import estática dentro de um if."
+      ],
+      "answer": 0,
+      "explanation": "Import dinâmico retorna uma Promise e permite adiar o carregamento conforme o fluxo."
+    }
+  ],
+  "javascript-promise-all-race-allsettled": [
+    {
+      "question": "Você precisa conhecer sucesso ou falha de cada operação independente. Qual combinador usar?",
+      "options": [
+        "Promise.allSettled.",
+        "Promise.all."
+      ],
+      "answer": 0,
+      "explanation": "AllSettled entrega o resultado individual de todas; all rejeita quando uma entrada rejeita."
+    },
+    {
+      "question": "Promise.race cancela automaticamente as operações que não venceram?",
+      "options": [
+        "Sim, as outras Promises são canceladas ao decidir o resultado.",
+        "Não, cancelamento exige suporte e controle explícitos."
+      ],
+      "answer": 1,
+      "explanation": "O combinador define a conclusão da Promise resultante, mas não interrompe o trabalho restante."
+    }
+  ],
+  "javascript-this-prototype-chain": [
+    {
+      "question": "Em uma função comum, o this é determinado principalmente por quê?",
+      "options": [
+        "Sempre pelo arquivo em que foi escrita.",
+        "Pela forma como a função é chamada."
+      ],
+      "answer": 1,
+      "explanation": "Chamada como método, bind e outras formas de invocação afetam this em funções comuns."
+    },
+    {
+      "question": "Uma propriedade não existe diretamente no objeto. O que pode acontecer na leitura?",
+      "options": [
+        "O JavaScript copia automaticamente todas as propriedades do protótipo para o objeto.",
+        "A busca continua pela cadeia de protótipos."
+      ],
+      "answer": 1,
+      "explanation": "A cadeia permite encontrar propriedades herdadas sem copiá-las para cada instância."
+    }
+  ],
+  "javascript-valores-imutabilidade-memoria": [
+    {
+      "question": "Declarar um objeto com const impede alterar suas propriedades?",
+      "options": [
+        "Não, const protege o vínculo da variável.",
+        "Sim, const congela profundamente o objeto."
+      ],
+      "answer": 0,
+      "explanation": "A variável não pode ser reatribuída, mas o objeto ainda pode ser mutável."
+    },
+    {
+      "question": "Um objeto sem uso aparente pode continuar retido na memória?",
+      "options": [
+        "Sim, se ainda estiver alcançável por referências como listeners e closures.",
+        "Não, o coletor conhece a intenção e libera qualquer objeto que a tela não mostra."
+      ],
+      "answer": 0,
+      "explanation": "Coleta de lixo depende de alcançabilidade, não da utilidade percebida pelo desenvolvedor."
+    }
+  ],
+  "navegador-csrf-clickjacking-tokens": [
+    {
+      "question": "Por que uma aplicação com cookies precisa considerar CSRF?",
+      "options": [
+        "Credenciais podem acompanhar requisições que o usuário não pretendia autorizar.",
+        "Porque cookies impedem o navegador de distinguir qualquer origem."
+      ],
+      "answer": 0,
+      "explanation": "O desenho deve proteger mutações considerando envio automático de credenciais e contexto da requisição."
+    },
+    {
+      "question": "Qual risco o clickjacking explora?",
+      "options": [
+        "Induzir uma ação em uma interface legítima apresentada de forma enganosa.",
+        "Ler automaticamente todo cookie HttpOnly com JavaScript."
+      ],
+      "answer": 0,
+      "explanation": "O ataque manipula a interação visual; políticas de enquadramento ajudam a limitar esse vetor."
+    }
+  ],
+  "navegador-http-preload-prefetch": [
+    {
+      "question": "Quando preload é mais adequado?",
+      "options": [
+        "Para um recurso necessário à página atual com descoberta tardia comprovada.",
+        "Para baixar antecipadamente todos os recursos de todas as rotas."
+      ],
+      "answer": 0,
+      "explanation": "Preload disputa recursos com o carregamento atual e deve ter prioridade e necessidade justificadas."
+    },
+    {
+      "question": "O que diferencia prefetch de preload?",
+      "options": [
+        "Prefetch antecipa um recurso possivelmente útil depois; preload trata uma necessidade atual.",
+        "Prefetch garante que o recurso será usado e executado imediatamente."
+      ],
+      "answer": 0,
+      "explanation": "Prefetch é uma indicação de uso futuro, sujeita às decisões e condições do navegador."
+    }
+  ],
+  "navegador-indexeddb": [
+    {
+      "question": "O sucesso de uma requisição de gravação prova que toda a transação concluiu?",
+      "options": [
+        "Sim, a primeira requisição bem-sucedida confirma todas as outras.",
+        "Não, é preciso acompanhar a conclusão ou o aborto da transação."
+      ],
+      "answer": 1,
+      "explanation": "A unidade de confirmação é a transação, que ainda pode falhar depois de uma requisição individual."
+    },
+    {
+      "question": "É adequado manter uma transação IndexedDB aberta enquanto espera uma chamada de rede arbitrária?",
+      "options": [
+        "Não, obtenha os dados e organize a transação dentro de seu ciclo de vida.",
+        "Sim, ela ficará aberta por tempo ilimitado enquanto houver uma Promise."
+      ],
+      "answer": 0,
+      "explanation": "Transações têm regras de atividade e podem encerrar antes da continuação após a espera."
+    }
+  ],
+  "navegador-same-origin-cors": [
+    {
+      "question": "Quais partes definem uma origem?",
+      "options": [
+        "Esquema, host e porta.",
+        "Somente o nome do domínio, ignorando esquema e porta."
+      ],
+      "answer": 0,
+      "explanation": "Mudar uma dessas partes pode produzir uma origem diferente para a política do navegador."
+    },
+    {
+      "question": "Usar fetch com mode no-cors permite ler livremente JSON de outra origem?",
+      "options": [
+        "Não, a resposta é opaca para o JavaScript naquele modo.",
+        "Sim, esse modo desliga as restrições do servidor e do navegador."
+      ],
+      "answer": 0,
+      "explanation": "No-cors não concede acesso ao corpo da resposta; o compartilhamento depende da política correta."
+    }
+  ],
+  "navegador-service-workers": [
+    {
+      "question": "Registrar um service worker garante controle imediato da aba atual?",
+      "options": [
+        "Não, instalação, ativação e controle têm etapas próprias.",
+        "Sim, o registro substitui imediatamente toda requisição da aba."
+      ],
+      "answer": 0,
+      "explanation": "O ciclo de vida precisa ser observado para saber qual versão controla cada cliente."
+    },
+    {
+      "question": "Cache API e cache HTTP são a mesma camada?",
+      "options": [
+        "Sim, definir Cache-Control preenche automaticamente qualquer Cache API.",
+        "Não, possuem mecanismos e políticas diferentes."
+      ],
+      "answer": 1,
+      "explanation": "Uma estratégia de service worker precisa administrar suas entradas de cache explicitamente."
+    }
+  ],
+  "navegador-url-renderizacao": [
+    {
+      "question": "Receber o HTML significa que a página já foi completamente desenhada?",
+      "options": [
+        "Não, ainda há análise, estilos, layout, paint e composição conforme necessário.",
+        "Sim, a rede entrega a imagem final da página."
+      ],
+      "answer": 0,
+      "explanation": "HTTP entrega bytes; o navegador transforma os recursos em estrutura e apresentação."
+    },
+    {
+      "question": "Por que alternar escritas de estilo com leituras de geometria pode custar caro?",
+      "options": [
+        "Pode forçar cálculo síncrono de layout repetidamente.",
+        "Porque toda leitura de uma propriedade cria uma nova conexão HTTP."
+      ],
+      "answer": 0,
+      "explanation": "Leituras que exigem geometria atualizada podem antecipar trabalho de layout após alterações."
+    }
+  ],
+  "navegador-websocket-sse": [
+    {
+      "question": "Qual tecnologia atende um fluxo de eventos do servidor para o navegador usando EventSource?",
+      "options": [
+        "SSE.",
+        "Somente WebSocket."
+      ],
+      "answer": 0,
+      "explanation": "SSE oferece um canal de eventos do servidor; WebSocket é adequado quando se exige comunicação bidirecional."
+    },
+    {
+      "question": "Reconectar um canal garante recuperar todos os eventos perdidos?",
+      "options": [
+        "Sim, a conexão de transporte guarda qualquer histórico indefinidamente.",
+        "Não, o protocolo da aplicação precisa definir retomada, identificação e reconciliação."
+      ],
+      "answer": 1,
+      "explanation": "A política de reconexão precisa tratar lacunas e validade dos dados, além de restabelecer a conexão."
+    }
+  ],
+  "navegador-xss-csp": [
+    {
+      "question": "Para mostrar um texto vindo do usuário, qual destino é mais apropriado?",
+      "options": [
+        "innerHTML sem sanitização.",
+        "textContent."
+      ],
+      "answer": 1,
+      "explanation": "TextContent trata o valor como texto; destinos que interpretam HTML podem transformar dados em código ou marcação."
+    },
+    {
+      "question": "Uma CSP elimina a necessidade de tratar HTML não confiável?",
+      "options": [
+        "Não, ela é uma camada adicional de defesa.",
+        "Sim, qualquer HTML se torna seguro quando há um cabeçalho CSP."
+      ],
+      "answer": 0,
+      "explanation": "Política de execução não substitui escolhas seguras de destino, validação e sanitização quando necessária."
+    }
+  ],
+  "performance-bundle-code-splitting-tree-shaking": [
+    {
+      "question": "Qual diferença entre code splitting e tree shaking?",
+      "options": [
+        "Splitting separa código em partes; tree shaking pode remover código não necessário.",
+        "Ambos removem qualquer dependência que demora para baixar."
+      ],
+      "answer": 0,
+      "explanation": "Separar carregamento e eliminar código são mecanismos distintos."
+    },
+    {
+      "question": "Como verificar se uma divisão de bundle melhorou a experiência?",
+      "options": [
+        "Conferir apenas se aumentou a quantidade de arquivos.",
+        "Comparar a jornada, o conteúdo carregado e as dependências no waterfall."
+      ],
+      "answer": 1,
+      "explanation": "Mais chunks podem criar novas esperas; a medição precisa acompanhar a tarefa real."
+    }
+  ],
+  "performance-cache-memoization": [
+    {
+      "question": "Uma resposta com no-cache nunca pode ser armazenada?",
+      "options": [
+        "Não, no-cache é idêntico a no-store.",
+        "Pode ser armazenada, mas precisa de revalidação antes de ser reutilizada conforme o protocolo."
+      ],
+      "answer": 1,
+      "explanation": "No-store proíbe armazenamento; no-cache exige validação para reutilização."
+    },
+    {
+      "question": "Quando uma memoização pode devolver um resultado incorreto?",
+      "options": [
+        "Sempre que a função retorna um número.",
+        "Quando a chave não representa todas as entradas relevantes do cálculo."
+      ],
+      "answer": 1,
+      "explanation": "Reutilização só é correta quando entradas equivalentes realmente produzem o mesmo resultado válido."
+    }
+  ],
+  "performance-core-web-vitals": [
+    {
+      "question": "Qual métrica acompanha deslocamentos inesperados de conteúdo?",
+      "options": [
+        "CLS.",
+        "LCP."
+      ],
+      "answer": 0,
+      "explanation": "CLS trata estabilidade visual; LCP acompanha a apresentação do maior conteúdo relevante."
+    },
+    {
+      "question": "Uma medição de laboratório representa automaticamente todos os usuários reais?",
+      "options": [
+        "Sim, basta repetir o teste uma vez na máquina do desenvolvedor.",
+        "Não, dados de campo refletem dispositivos e condições de jornadas reais."
+      ],
+      "answer": 1,
+      "explanation": "Laboratório ajuda a investigar; campo mostra a experiência observada sob uma distribuição real de condições."
+    }
+  ],
+  "performance-devtools-network-waterfall": [
+    {
+      "question": "Por que controlar rede, cache e dispositivo ao comparar duas versões?",
+      "options": [
+        "Para reduzir variações que podem ser confundidas com efeito da mudança.",
+        "Para garantir que qualquer versão sempre ficará mais rápida."
+      ],
+      "answer": 0,
+      "explanation": "Comparações precisam de condições e jornadas equivalentes para sustentar uma conclusão."
+    },
+    {
+      "question": "Uma API rápida garante que a interação esteja rápida?",
+      "options": [
+        "Sim, o tempo de rede é o único custo da interface.",
+        "Não, trabalho de CPU e renderização também podem atrasar o resultado."
+      ],
+      "answer": 1,
+      "explanation": "Network e Performance fornecem evidências complementares de espera e execução."
+    }
+  ],
+  "performance-imagens-lazy-loading": [
+    {
+      "question": "A imagem principal provável de LCP deve receber lazy loading indiscriminadamente?",
+      "options": [
+        "Não, isso pode atrasar um conteúdo necessário à área inicial.",
+        "Sim, toda imagem fica mais rápida com loading lazy."
+      ],
+      "answer": 0,
+      "explanation": "A política depende do papel da imagem; o conteúdo principal precisa ser descoberto e carregado a tempo."
+    },
+    {
+      "question": "Por que declarar dimensões ou proporção para uma imagem?",
+      "options": [
+        "Para impedir que o navegador baixe a imagem em telas pequenas.",
+        "Para reservar espaço e reduzir deslocamentos durante o carregamento."
+      ],
+      "answer": 1,
+      "explanation": "Espaço reservado estabiliza o layout; seleção de recurso responsivo é outra responsabilidade."
+    }
+  ],
+  "performance-long-tasks": [
+    {
+      "question": "Colocar await Promise.resolve() dentro de um cálculo garante oportunidade de desenho?",
+      "options": [
+        "Não, continuar por microtasks pode manter a thread ocupada sem ceder para a próxima tarefa.",
+        "Sim, qualquer await garante um novo frame."
+      ],
+      "answer": 0,
+      "explanation": "A pausa precisa permitir que o navegador avance em seu ciclo de tarefas e renderização."
+    },
+    {
+      "question": "Antes de transferir um cálculo para worker, o que avaliar?",
+      "options": [
+        "Somente a quantidade de funções no arquivo.",
+        "Redução do trabalho, custo de transferência e consistência dos resultados."
+      ],
+      "answer": 1,
+      "explanation": "Workers não eliminam trabalho nem o custo de comunicar dados; a divisão precisa ser medida."
+    }
+  ],
+  "performance-memory-leaks": [
+    {
+      "question": "Uma subida isolada de memória prova vazamento?",
+      "options": [
+        "Sim, qualquer crescimento significa que o coletor falhou.",
+        "Não, compare ciclos repetidos e a retenção após a limpeza esperada."
+      ],
+      "answer": 1,
+      "explanation": "Caches e alocações temporárias também elevam uso; vazamento exige investigar retenção indevida."
+    },
+    {
+      "question": "Como confirmar a correção de um vazamento?",
+      "options": [
+        "Repetir o mesmo ciclo de entrada e saída e comparar referências retidas.",
+        "Apenas recarregar a página e observar que a memória caiu."
+      ],
+      "answer": 0,
+      "explanation": "Recarregar remove o contexto; o teste deve demonstrar limpeza durante o ciclo real da aplicação."
+    }
+  ],
+  "performance-virtualizacao-renderizacao": [
+    {
+      "question": "O que a virtualização de lista reduz diretamente?",
+      "options": [
+        "Obrigatoriamente a quantidade total de registros no servidor.",
+        "A quantidade de itens montados, mantendo uma janela da lista."
+      ],
+      "answer": 1,
+      "explanation": "Virtualização trata volume de renderização; paginação e carregamento de dados são outras decisões."
+    },
+    {
+      "question": "Qual cuidado de produto acompanha a virtualização?",
+      "options": [
+        "Teclado, foco, busca na página e acesso ao conteúdo fora da janela.",
+        "Apenas escolher uma cor diferente para a barra de rolagem."
+      ],
+      "answer": 0,
+      "explanation": "Itens ausentes do DOM mudam capacidades de navegação e exigem validação da experiência."
+    }
+  ],
+  "system-design-autenticacao-seguranca": [
+    {
+      "question": "Autenticar uma sessão basta para autorizar qualquer documento?",
+      "options": [
+        "Não, cada operação precisa verificar permissão e contexto do recurso.",
+        "Sim, qualquer usuário logado pode receber todos os dados."
+      ],
+      "answer": 0,
+      "explanation": "Identidade e autorização são decisões distintas; isolamento de organizações deve ser aplicado no servidor."
+    },
+    {
+      "question": "Um cookie HttpOnly elimina sozinho XSS e CSRF?",
+      "options": [
+        "Sim, ele impede qualquer ação indevida no navegador.",
+        "Não, ele restringe leitura por JavaScript, mas outras proteções continuam necessárias."
+      ],
+      "answer": 1,
+      "explanation": "HttpOnly não neutraliza scripts maliciosos nem define toda a proteção das mutações."
+    }
+  ],
+  "system-design-bff-contratos-api": [
+    {
+      "question": "Qual responsabilidade combina com um BFF?",
+      "options": [
+        "Adaptar e agregar contratos para uma experiência específica com limites definidos.",
+        "Duplicar toda regra de negócio e todas as bases de dados."
+      ],
+      "answer": 0,
+      "explanation": "O BFF atende necessidades do cliente sem se tornar uma cópia sem limites dos serviços de domínio."
+    },
+    {
+      "question": "Uma dependência opcional falha durante uma agregação. O que o contrato deve definir?",
+      "options": [
+        "Se e como oferecer resultado parcial sem ocultar a falha.",
+        "Que toda falha deve sempre derrubar todas as partes da página."
+      ],
+      "answer": 0,
+      "explanation": "Disponibilidade parcial exige semântica explícita sobre campos, erros e componentes essenciais."
+    }
+  ],
+  "system-design-cache-estado-performance": [
+    {
+      "question": "O que uma chave de cache de dados pessoais precisa considerar?",
+      "options": [
+        "Somente o nome da rota pública.",
+        "Identidade, organização e demais dimensões que alterem a resposta."
+      ],
+      "answer": 1,
+      "explanation": "Uma chave incompleta pode devolver dados de outro contexto ou pessoa."
+    },
+    {
+      "question": "Um estado otimista já representa confirmação do servidor?",
+      "options": [
+        "Não, precisa de reconciliação e tratamento de falha.",
+        "Sim, mostrar a alteração equivale a persistir o resultado."
+      ],
+      "answer": 0,
+      "explanation": "A interface antecipa uma hipótese; a fonte de verdade ainda pode recusar ou alterar o resultado."
+    }
+  ],
+  "system-design-disponibilidade-observabilidade": [
+    {
+      "question": "Como definir um objetivo útil de disponibilidade?",
+      "options": [
+        "Escolher indicador, janela e critério ligados à jornada do usuário.",
+        "Exigir genericamente que todos os serviços nunca falhem."
+      ],
+      "answer": 0,
+      "explanation": "Objetivos mensuráveis permitem avaliar impacto e planejar recuperação e orçamento de erro."
+    },
+    {
+      "question": "Logs, métricas e traces são intercambiáveis?",
+      "options": [
+        "Sim, guardar logs elimina a necessidade de qualquer outra medida.",
+        "Não, oferecem sinais complementares para investigar o sistema."
+      ],
+      "answer": 1,
+      "explanation": "Métricas mostram tendências; traces e logs ajudam a correlacionar caminhos e acontecimentos."
+    }
+  ],
+  "system-design-documentos-notificacoes": [
+    {
+      "question": "Uma notificação afirma que um documento ficou pronto. Qual deve ser a fonte de verdade?",
+      "options": [
+        "A presença de uma mensagem na tela, mesmo sem verificar a operação.",
+        "O estado da operação consultável no serviço."
+      ],
+      "answer": 1,
+      "explanation": "Notificações podem atrasar, repetir ou se perder; o estado autoritativo permite reconciliação."
+    },
+    {
+      "question": "Gerar documentos em uma fila dispensa idempotência?",
+      "options": [
+        "Sim, qualquer fila garante um único efeito de negócio.",
+        "Não, a repetição de mensagens precisa ser prevista."
+      ],
+      "answer": 1,
+      "explanation": "Entregas repetidas podem ocorrer e não devem gerar efeitos indevidos ou arquivos inconsistentes."
+    }
+  ],
+  "system-design-erros-retry-pagamentos": [
+    {
+      "question": "Uma requisição de pagamento terminou em timeout. Qual conclusão é segura?",
+      "options": [
+        "O pagamento certamente não aconteceu.",
+        "O resultado é desconhecido e deve ser reconciliado."
+      ],
+      "answer": 1,
+      "explanation": "O servidor pode ter concluído antes da perda da resposta; repetir sem controle pode duplicar a operação."
+    },
+    {
+      "question": "O que torna uma repetição de pagamento idempotente?",
+      "options": [
+        "Apenas desabilitar o botão no navegador.",
+        "Um contrato no servidor que reconhece a operação e impede duplicação de efeito."
+      ],
+      "answer": 1,
+      "explanation": "O botão não controla repetição de transporte nem outros clientes; a garantia precisa estar na fronteira da operação."
+    }
+  ],
+  "system-design-portal-escala": [
+    {
+      "question": "Antes de escolher a infraestrutura de um portal, o que estimar?",
+      "options": [
+        "Somente o número de frameworks existentes.",
+        "Jornadas, volume, concorrência e requisitos que alteram o desenho."
+      ],
+      "answer": 1,
+      "explanation": "Hipóteses de carga e comportamento tornam as escolhas discutíveis e verificáveis."
+    },
+    {
+      "question": "Aumentar instâncias da API resolve qualquer gargalo do sistema?",
+      "options": [
+        "Sim, toda camada escala automaticamente com o número de servidores web.",
+        "Não, banco, integrações, filas e cliente também têm limites."
+      ],
+      "answer": 1,
+      "explanation": "O gargalo pode estar em uma dependência compartilhada ou no trabalho feito no navegador."
+    }
+  ],
+  "testes-e2e-playwright-cypress": [
+    {
+      "question": "Para testar acesso negado de verdade, qual cenário é mais informativo?",
+      "options": [
+        "Verificar apenas se o botão foi escondido.",
+        "Abrir diretamente o recurso com uma identidade que não tem a permissão."
+      ],
+      "answer": 1,
+      "explanation": "Ocultar um controle não comprova que a rota ou a API recusam um acesso direto."
+    },
+    {
+      "question": "Como sincronizar um teste E2E com uma operação assíncrona?",
+      "options": [
+        "Adicionar uma espera fixa longa em todo passo.",
+        "Esperar um resultado observável ou condição relevante."
+      ],
+      "answer": 1,
+      "explanation": "Esperas por condição representam o contrato e evitam depender de um tempo arbitrário."
+    }
+  ],
+  "testes-estrategia-risco": [
+    {
+      "question": "Como escolher o escopo de um teste?",
+      "options": [
+        "Pelo risco e pela colaboração que precisam ser verificados.",
+        "Sempre pelo nível que exige menos linhas no teste."
+      ],
+      "answer": 0,
+      "explanation": "Unitário, integração e E2E mostram evidências diferentes; a escolha depende da falha que importa."
+    },
+    {
+      "question": "Todo teste que verifica texto de botão é inútil?",
+      "options": [
+        "Sim, texto nunca representa comportamento.",
+        "Não, o texto pode ser parte de um contrato importante para a tarefa."
+      ],
+      "answer": 1,
+      "explanation": "O valor do teste depende de a expectativa proteger algo relevante, não de uma proibição genérica."
+    }
+  ],
+  "testes-integracao-testing-library": [
+    {
+      "question": "Qual consulta expressa melhor a intenção de encontrar um botão acessível?",
+      "options": [
+        "Buscar por role e nome.",
+        "Buscar sempre pela estrutura de classes CSS internas."
+      ],
+      "answer": 0,
+      "explanation": "Role e nome aproximam a consulta do contrato percebido e tornam problemas de semântica mais visíveis."
+    },
+    {
+      "question": "Um teste de formulário com save simulado prova a autorização real da API?",
+      "options": [
+        "Sim, um mock bem configurado executa a regra do backend.",
+        "Não, ele verifica a interação dentro do limite que manteve real."
+      ],
+      "answer": 1,
+      "explanation": "A evidência do teste termina na fronteira substituída e não garante a integração real."
+    }
+  ],
+  "testes-manutencao-cobertura-ci": [
+    {
+      "question": "Cobertura de 100% demonstra que a suíte detecta todos os defeitos relevantes?",
+      "options": [
+        "Não, execução de linhas não garante expectativas e cenários suficientes.",
+        "Sim, toda linha executada está comprovadamente correta."
+      ],
+      "answer": 0,
+      "explanation": "Cobertura aponta trechos exercitados, mas não mede por si só a força das verificações."
+    },
+    {
+      "question": "Um teste intermitente deve ser tratado apenas aumentando o timeout?",
+      "options": [
+        "Não, é preciso investigar sincronização, dados e ambiente.",
+        "Sim, mais tempo resolve qualquer fonte de instabilidade."
+      ],
+      "answer": 0,
+      "explanation": "Flakiness pode esconder concorrência e dependências entre testes; o diagnóstico orienta a correção."
+    }
+  ],
+  "testes-mocks-contratos-assincronismo": [
+    {
+      "question": "Por que usar uma Promise controlada num teste de gravação?",
+      "options": [
+        "Para observar o estado pendente e decidir quando a operação termina.",
+        "Para fazer a gravação real no servidor de produção."
+      ],
+      "answer": 0,
+      "explanation": "Controlar a conclusão permite verificar espera, sucesso e falha sem depender de timing externo."
+    },
+    {
+      "question": "Mockar o módulo que contém a regra sob teste demonstra que a regra funciona?",
+      "options": [
+        "Sim, pois todo mock contém automaticamente a implementação real.",
+        "Não, pode demonstrar apenas o comportamento programado no mock."
+      ],
+      "answer": 1,
+      "explanation": "Substitua a borda adequada e preserve a colaboração que precisa ser verificada."
+    }
+  ],
+  "testes-unitarios-vitest-jest": [
+    {
+      "question": "Uma regra exige sessão, mesma organização e permissão. O que testar?",
+      "options": [
+        "Somente um caso permitido.",
+        "O caso permitido e a negação de cada requisito."
+      ],
+      "answer": 1,
+      "explanation": "Variar cada condição ajuda a mostrar que nenhum requisito de acesso foi ignorado."
+    },
+    {
+      "question": "Como conferir se um teste protege contra um defeito específico?",
+      "options": [
+        "Introduzir temporariamente a falha no laboratório e verificar que o teste falha.",
+        "Renomear o arquivo de teste e conferir se ele continua verde."
+      ],
+      "answer": 0,
+      "explanation": "Uma verificação precisa ser capaz de detectar a regressão que pretende impedir."
+    }
+  ],
+  "typescript-conditional-types-infer": [
+    {
+      "question": "O infer de um tipo condicional lê valores em runtime?",
+      "options": [
+        "Não, extrai uma parte de um padrão no sistema de tipos.",
+        "Sim, percorre os dados reais no navegador."
+      ],
+      "answer": 0,
+      "explanation": "Essas operações são estáticas e não geram validação ou inspeção de valores por si mesmas."
+    },
+    {
+      "question": "Um tipo condicional com parâmetro de tipo isolado pode distribuir sobre uma union?",
+      "options": [
+        "Não, condicionais sempre tratam unions como um bloco indivisível.",
+        "Sim, ele pode avaliar cada membro separadamente."
+      ],
+      "answer": 1,
+      "explanation": "A distribuição é parte do comportamento desses condicionais; envolver os lados em tuplas muda essa regra."
+    }
+  ],
+  "typescript-generics": [
+    {
+      "question": "Qual benefício de firstItem<Item> retornar Item ou undefined?",
+      "options": [
+        "Preservar a relação com o tipo da entrada e admitir lista vazia.",
+        "Garantir que qualquer lista sempre tem um primeiro valor."
+      ],
+      "answer": 0,
+      "explanation": "O contrato expressa informação preservada sem prometer um item que pode não existir."
+    },
+    {
+      "question": "Uma constraint Item extends { id: string } elimina as outras propriedades do item?",
+      "options": [
+        "Sim, o resultado só pode conter id.",
+        "Não, exige id e preserva o tipo completo inferido."
+      ],
+      "answer": 1,
+      "explanation": "A constraint estabelece o mínimo necessário para a implementação sem apagar o restante do contrato."
+    }
+  ],
+  "typescript-inferencia-interfaces-types": [
+    {
+      "question": "Declarar uma interface valida automaticamente a resposta de uma API?",
+      "options": [
+        "Não, dados externos precisam de validação em execução.",
+        "Sim, a interface rejeita JSON inválido no navegador."
+      ],
+      "answer": 0,
+      "explanation": "Tipos normalmente são apagados ao gerar JavaScript e não criam validadores de runtime."
+    },
+    {
+      "question": "Usar as const congela profundamente um objeto em execução?",
+      "options": [
+        "Sim, equivale a chamar Object.freeze em todos os níveis.",
+        "Não, altera a visão estática de tipos e literais."
+      ],
+      "answer": 1,
+      "explanation": "Restrições no sistema de tipos não implicam proteção material contra mutação em runtime."
+    }
+  ],
+  "typescript-keyof-typeof": [
+    {
+      "question": "O que keyof produz no espaço de tipos?",
+      "options": [
+        "Uma lista de valores criada em runtime.",
+        "As chaves permitidas por um tipo."
+      ],
+      "answer": 1,
+      "explanation": "Keyof descreve relações estáticas; não executa uma enumeração do objeto."
+    },
+    {
+      "question": "Por que Object.keys não retorna automaticamente a union exata de keyof de qualquer objeto?",
+      "options": [
+        "Porque o valor em runtime pode conter propriedades além da visão estática do tipo.",
+        "Porque Object.keys só funciona com arrays."
+      ],
+      "answer": 0,
+      "explanation": "Tipagem estrutural e objetos abertos impedem assumir sempre correspondência exata entre visão estática e chaves reais."
+    }
+  ],
+  "typescript-narrowing-type-guards": [
+    {
+      "question": "Como distinguir ausência sem descartar o número zero?",
+      "options": [
+        "Usar apenas if (valor).",
+        "Comparar explicitamente com undefined ou null conforme o contrato."
+      ],
+      "answer": 1,
+      "explanation": "Truthiness também elimina zero, string vazia e false, que podem ser dados válidos."
+    },
+    {
+      "question": "Um predicado value is Article garante que sua implementação está correta?",
+      "options": [
+        "Não, o compilador confia no predicado; as verificações precisam ser implementadas e testadas.",
+        "Sim, o compilador gera todas as verificações da interface."
+      ],
+      "answer": 0,
+      "explanation": "Uma assinatura de guard incorreta pode prometer uma estrutura que não foi realmente demonstrada."
+    }
+  ],
+  "typescript-unions-intersections": [
+    {
+      "question": "Como representar carregando, erro e sucesso com dados ligados ao estado correto?",
+      "options": [
+        "Com uma union discriminada.",
+        "Com vários booleanos independentes sem restrições."
+      ],
+      "answer": 0,
+      "explanation": "Um discriminante relaciona cada alternativa aos dados válidos naquele estado e reduz combinações impossíveis."
+    },
+    {
+      "question": "Uma intersection de tipos faz merge de objetos em runtime?",
+      "options": [
+        "Sim, cria automaticamente um novo objeto com spread.",
+        "Não, exige que um valor satisfaça contratos combinados."
+      ],
+      "answer": 1,
+      "explanation": "Intersections operam no sistema de tipos; composição de valores precisa de código em execução."
+    }
+  ],
+  "typescript-utility-mapped-types": [
+    {
+      "question": "Omit remove fisicamente uma propriedade de um objeto recebido?",
+      "options": [
+        "Não, transforma o contrato estático, não o objeto em execução.",
+        "Sim, chamar uma função com esse tipo apaga a propriedade."
+      ],
+      "answer": 0,
+      "explanation": "Para uma saída segura, construa explicitamente os campos permitidos em runtime."
+    },
+    {
+      "question": "Readonly torna automaticamente todos os objetos internos imutáveis?",
+      "options": [
+        "Não, a transformação padrão é rasa.",
+        "Sim, impede qualquer mutação profunda em runtime."
+      ],
+      "answer": 0,
+      "explanation": "Readonly restringe atribuições na visão tipada do primeiro nível; não congela o objeto."
+    }
+  ]
+}

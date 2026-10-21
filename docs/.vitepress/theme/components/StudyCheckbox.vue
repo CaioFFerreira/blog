@@ -1,20 +1,17 @@
 <script setup lang="ts">
+import { withBase } from 'vitepress'
 import { useStudyProgress } from '../composables/useStudyProgress'
 
-const props = defineProps<{ url: string; title: string }>()
-const { studied, setStudied } = useStudyProgress(() => props.url)
-
-function handleChange(event: Event) {
-  setStudied((event.target as HTMLInputElement).checked)
-}
+const props = defineProps<{ url: string; title: string; version: string }>()
+const { studied } = useStudyProgress(() => props.url, () => props.version)
 </script>
 
 <template>
-  <label class="study-checkbox" :class="{ 'is-studied': studied }" :title="studied ? 'Desmarcar como estudado' : 'Marcar como estudado'">
-    <input type="checkbox" :checked="studied" :aria-label="`Marcar como estudado: ${title}`" @change="handleChange">
+  <a class="study-checkbox" :class="{ 'is-studied': studied }" :href="withBase(`${url}#quiz`)" :aria-label="`${studied ? 'Conhecimento validado; rever quiz' : 'Responder quiz para validar conhecimento'}: ${title}`">
     <span class="study-indicator" aria-hidden="true">
-      <svg viewBox="0 0 20 20" fill="none"><path d="m5 10 3.2 3.2L15 6.5" /></svg>
+      <svg v-if="studied" viewBox="0 0 20 20" fill="none"><path d="m5 10 3.2 3.2L15 6.5" /></svg>
+      <span v-else>?</span>
     </span>
-    <span>{{ studied ? 'Estudado' : 'Estudar' }}</span>
-  </label>
+    <span>{{ studied ? 'Validado' : 'Fazer quiz' }}</span>
+  </a>
 </template>

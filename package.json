@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:quiz": "node --experimental-strip-types tests/quiz.test.mjs",
     "dev": "vitepress dev docs",
     "typecheck": "vue-tsc --noEmit",
     "build": "npm run typecheck && vitepress build docs",
