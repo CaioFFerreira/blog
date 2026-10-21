@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { createFocusAudio } from '../focus-audio'
-import musicUrl from '../../../../src/assets/audio/40Hz Binaural Gamma Waves - Ultra Deep Concentration - Amplifocus.m4a?url'
+import musicUrl from '../../../../src/assets/audio/Just One More Drink -- Jazz Noir - Pop Studio.mp3?url'
 
 const playing = ref(false)
 const busy = ref(false)
@@ -72,7 +72,7 @@ onUnmounted(() => {
       <h2 id="focus-audio-title" ref="heading" tabindex="-1">Música de fundo</h2>
       <button class="audio-close" type="button" aria-label="Fechar player de sons" @click="expanded = false; trigger?.focus()">×</button>
     </div>
-    <p class="audio-help">40Hz Binaural Gamma Waves — Amplifocus. Continua tocando ao fechar o painel e navegar pelos posts.</p>
+    <p class="audio-help">Just One More Drink — Jazz Noir · Pop Studio. Continua tocando ao fechar o painel e navegar pelos posts.</p>
     <template v-if="supported">
       <div class="focus-audio-controls">
         <button class="audio-play" type="button" :disabled="!ready || busy" :aria-pressed="playing" @click="toggleAudio">{{ busy ? 'Aguarde…' : playing ? 'Pausar som' : 'Reproduzir som' }}</button>

@@ -19,7 +19,7 @@ const definitions = [
 
 export const startPost = posts.find(post => post.url === '/posts/por-onde-comecar.html')
 
-export interface ReadingPath {
+interface ReadingPath {
   category: string
   goal: string
   posts: Post[]

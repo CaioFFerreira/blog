@@ -92,22 +92,19 @@ h1 em { font-style: normal; color: var(--green); }
 .search-box input { width: 240px; min-width: 0; border: 0; background: transparent; color: var(--ink); font: 12px 'DM Sans', sans-serif; }
 .library-heading { display: flex; flex-wrap: wrap; gap: 10px 16px; line-height: 1.8; justify-content: space-between; padding: 25px 0 18px; font: 9px var(--mono); letter-spacing: .06em; color: var(--muted); }
 .post-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding-bottom: 64px; }
-.post-card { display: flex; flex-direction: column; padding: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color .2s, transform .2s; }
+.post-card { position: relative; min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; padding: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color .2s, transform .2s; }
 .post-card:hover { border-color: var(--green); transform: translateY(-3px); }
-.post-card { position: relative; min-width: 0; overflow-wrap: anywhere; }
 .post-card-link { color: inherit; text-decoration: none; }
 .post-card-link::after { content: ''; position: absolute; inset: 0; border-radius: 6px; }
 .post-topline { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .post-topline .post-meta { min-width: 0; flex: 1 1 120px; justify-content: flex-start; }
 .post-topline .eyebrow { min-width: 0; flex: 1 1 140px; margin: 0; overflow-wrap: anywhere; }
-.study-checkbox { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; min-height: 44px; padding: 6px 11px 6px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--muted); cursor: pointer; font: 10px var(--mono); transition: border-color .2s, color .2s, background .2s; }
-.study-checkbox { text-decoration: none; }
+.study-checkbox { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; min-height: 44px; padding: 6px 11px 6px 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--muted); text-decoration: none; cursor: pointer; font: 10px var(--mono); transition: border-color .2s, color .2s, background .2s; }
 .study-indicator { display: grid; place-items: center; width: 21px; height: 21px; border: 1px solid var(--line); border-radius: 50%; transition: background .2s, border-color .2s; }
-.study-indicator svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .3; }
+.study-indicator svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .study-checkbox:hover { border-color: var(--green); color: var(--green); }
 .study-checkbox.is-studied { color: var(--green); border-color: var(--green); background: color-mix(in srgb, var(--green) 9%, var(--surface)); }
 .study-checkbox.is-studied .study-indicator { background: var(--green); border-color: var(--green); color: var(--paper); }
-.study-checkbox.is-studied svg { opacity: 1; }
 .post-quiz { margin-top: 48px; padding: clamp(18px, 4vw, 32px); border: 1px solid var(--line); border-radius: 8px; background: var(--surface); scroll-margin-top: 24px; overflow-wrap: anywhere; }
 .post-quiz h2 { margin: 8px 0 16px; font: 500 clamp(24px, 5vw, 32px)/1.25 var(--display); }
 .post-quiz > p, .quiz-result p { line-height: 1.7; }
@@ -239,8 +236,7 @@ h1 em { font-style: normal; color: var(--green); }
   .topbar { flex-wrap: wrap; gap: 12px; padding-block: 16px; }
   .menu-toggle { display: inline-flex; font-size: 13px; }
   .header-actions { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
-  .header-actions.is-open { display: flex; }
-  .header-actions.is-open { max-height: calc(100dvh - 110px); overflow-y: auto; }
+  .header-actions.is-open { display: flex; max-height: calc(100dvh - 110px); overflow-y: auto; }
   .audio-menu { width: 100%; }
   .audio-menu-trigger { width: 100%; padding-inline: 12px; }
   .focus-audio { position: static; width: 100%; max-height: 55dvh; margin-block: 8px; box-shadow: none; }

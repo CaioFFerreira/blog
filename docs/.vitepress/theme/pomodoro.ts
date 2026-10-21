@@ -14,14 +14,14 @@ export interface PomodoroState {
   completed: Record<string, { day: string; minutes: number }>
 }
 
-export const defaultSettings: PomodoroSettings = { focusMinutes: 25, breakMinutes: 5, dailyGoal: 4 }
+const defaultSettings: PomodoroSettings = { focusMinutes: 25, breakMinutes: 5, dailyGoal: 4 }
 
 export function localDay(timestamp: number): string {
   const date = new Date(timestamp)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-export function validSettings(value: unknown): value is PomodoroSettings {
+function validSettings(value: unknown): value is PomodoroSettings {
   if (!value || typeof value !== 'object') return false
   const settings = value as PomodoroSettings
   return Number.isInteger(settings.focusMinutes) && settings.focusMinutes >= 1 && settings.focusMinutes <= 120
@@ -29,7 +29,7 @@ export function validSettings(value: unknown): value is PomodoroSettings {
     && Number.isInteger(settings.dailyGoal) && settings.dailyGoal >= 1 && settings.dailyGoal <= 20
 }
 
-export function phaseDuration(state: Pick<PomodoroState, 'phase' | 'settings'>): number {
+function phaseDuration(state: Pick<PomodoroState, 'phase' | 'settings'>): number {
   return (state.phase === 'focus' ? state.settings.focusMinutes : state.settings.breakMinutes) * 60_000
 }
 
