@@ -35,6 +35,16 @@ O banco editorial fica em `docs/.vitepress/theme/quiz-bank.json`, com uma entrad
 
 ## Desenvolvimento
 
+O menu principal oferece **Música**, um player independente do Pomodoro, disponível no desktop e no menu mobile. Ele reproduz o arquivo local `src/assets/audio/40Hz Binaural Gamma Waves - Ultra Deep Concentration - Amplifocus.m4a`. A extensão corresponde ao conteúdo AAC/M4A do arquivo fornecido originalmente como `.mp3`; a versão para publicação foi recodificada em AAC a 64 kbit/s, mantendo estéreo e a duração integral. O volume do player fica em 100%, com ajuste pelo computador ou dispositivo.
+
+O áudio carrega apenas após clicar em **Reproduzir som**, toca em loop e retoma da posição atual após uma pausa. Fechar o painel, recolher o menu e navegar pelos artigos não interrompe a reprodução. Recarregar a página mantém o player pausado. O Vite publica o arquivo com uma URL própria, compatível com o caminho base da hospedagem. A desmontagem pausa e libera o recurso de mídia. `npm run test:audio` verifica reprodução, pausa, retomada, liberação e falhas de carregamento.
+
+O arquivo para publicação tem aproximadamente 65 MiB, abaixo do limite de 100 MiB por arquivo do GitHub. A versão estéreo mantém a gravação completa de 2 h 17 min, com metadados no início do arquivo para facilitar a reprodução progressiva.
+
+O Pomodoro fica disponível em um painel recolhível no canto inferior, na página inicial e nos artigos. O padrão é 25 minutos de foco, 5 de pausa e uma meta de 4 ciclos por dia. Em **Ajustar tempos e meta**, é possível escolher foco de 1 a 120 minutos, pausa de 1 a 60 e meta de 1 a 20 ciclos. Ajustes só são aplicados quando não há um ciclo em andamento ou pausado; reiniciar descarta apenas o tempo parcial.
+
+Somente um ciclo de foco concluído conta para a meta; pausas e reinícios não contam. Cada etapa seguinte começa manualmente. A contagem usa o horário de término, mantendo o prazo ao navegar, recarregar ou voltar de uma aba em segundo plano. Ao reabrir o site depois do prazo, apenas o ciclo iniciado é concluído, com crédito no dia local do término. A meta renova à meia-noite do dispositivo. O estado e os ciclos ficam no `localStorage`, isolados por caminho base e sincronizados entre abas; limpar o armazenamento apaga os dados. Sem acesso ao armazenamento, o painel informa que o progresso vale só durante a visita. `npm run test:pomodoro` verifica contagem, pausa, retomada, conclusão e virada do dia.
+
 Use Node.js 22 ou superior:
 
 ```sh

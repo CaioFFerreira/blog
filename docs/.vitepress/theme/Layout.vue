@@ -3,6 +3,7 @@ import { useData, withBase } from 'vitepress'
 import SiteHeader from './components/SiteHeader.vue'
 import BlogHome from './components/BlogHome.vue'
 import BlogPost from './components/BlogPost.vue'
+import PomodoroTimer from './components/PomodoroTimer.vue'
 
 const { frontmatter, page } = useData()
 </script>
@@ -17,5 +18,6 @@ const { frontmatter, page } = useData()
       <BlogPost v-else />
     </main>
     <footer class="site-footer"><span>c. / FRONT-END NOTES</span><span>Feito com curiosidade. Escrito por Caio.</span></footer>
+    <PomodoroTimer />
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useData, withBase } from 'vitepress'
 import { onMounted, onUnmounted, ref } from 'vue'
+import FocusAudio from './FocusAudio.vue'
 
 const { isDark } = useData()
 const menuOpen = ref(false)
@@ -37,6 +38,7 @@ onUnmounted(() => document.removeEventListener('pointerdown', closeOnOutsideClic
     <nav id="main-navigation" class="header-actions" :class="{ 'is-open': menuOpen }" aria-label="Navegação principal">
       <a :href="withBase('/#comece-aqui')" @click="menuOpen = false">Comece aqui</a>
       <a :href="withBase('/#artigos')" @click="menuOpen = false">Artigos</a>
+      <FocusAudio />
       <button class="theme-toggle" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark">
         {{ isDark ? '☀' : '☾' }}
       </button>
