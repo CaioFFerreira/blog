@@ -56,14 +56,14 @@ onUnmounted(() => {
       <LibraryNotifications />
     </template>
     <template v-else>
-      <button type="button" :disabled="!ready || busy" @click="signIn(frontmatter.layout === 'library' ? '/livros.html' : '/')">{{ !ready ? 'Carregando conta…' : busy ? 'Entrando…' : 'Entrar com Google' }}</button>
-      <button class="guest-theme" type="button" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark">{{ isDark ? '☀' : '☾' }}</button>
+      <button data-action="primary" class="ui-action" type="button" :disabled="!ready || busy" @click="signIn(frontmatter.layout === 'library' ? '/livros.html' : '/')">{{ !ready ? 'Carregando conta…' : busy ? 'Entrando…' : 'Entrar com Google' }}</button>
+      <button data-action="ghost" class="ui-action guest-theme" type="button" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark">{{ isDark ? '☀' : '☾' }}</button>
     </template>
     <Teleport v-if="mounted" to="body">
       <div id="account-dropdown" ref="dropdown" class="account-dropdown" popover="auto" :style="position" role="group" aria-label="Opções da conta" @toggle="onToggle">
         <p class="dropdown-name">{{ accountName }}</p>
-        <button type="button" @click="changeTheme"><span aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>{{ isDark ? 'Ativar tema claro' : 'Ativar tema escuro' }}</button>
-        <button class="account-logout" type="button" :disabled="busy" @click="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-5-5h10" /></svg>Sair da conta</button>
+        <button data-action="ghost" class="ui-action" type="button" @click="changeTheme"><span aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>{{ isDark ? 'Ativar tema claro' : 'Ativar tema escuro' }}</button>
+        <button data-action="ghost" class="ui-action account-logout" type="button" :disabled="busy" @click="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-5-5h10" /></svg>Sair da conta</button>
       </div>
       <RequestLoading :message="busy ? (user ? 'Saindo da conta…' : 'Conectando com Google…') : ''" />
       <ToastNotice :model-value="errorMessage" kind="error" />
@@ -88,6 +88,5 @@ button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .account-dropdown button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; text-align: left; font: 13px var(--font-sans); }
 .account-dropdown button:hover { background: color-mix(in srgb, var(--green) 8%, transparent); }
 .account-dropdown button > span { display: inline-grid; place-items: center; width: 18px; font-size: 20px; }
-.account-dropdown .account-logout { color: var(--orange); }
 @media (max-width: 900px) { .google-login { width: 100%; padding: 12px 0 0; margin-top: 8px; border-left: 0; border-top: 1px solid var(--line); } .account-trigger { flex: 1; padding-inline: 12px; } .account-name { max-width: none; flex: 1; text-align: left; } .guest-theme { margin-left: auto; } }
 </style>

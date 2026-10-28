@@ -143,7 +143,7 @@ onUnmounted(() => {
 
 <template>
   <div v-if="user" class="library-notifications">
-    <button ref="trigger" class="notification-bell" type="button" :aria-label="`Notificações${unread ? `, ${unread} não lidas` : ''}`" :aria-busy="counting" aria-haspopup="dialog" aria-controls="notifications-dialog" @click="open">
+    <button data-action="open" ref="trigger" class="ui-action notification-bell" type="button" :aria-label="`Notificações${unread ? `, ${unread} não lidas` : ''}`" :aria-busy="counting" aria-haspopup="dialog" aria-controls="notifications-dialog" @click="open">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
       <span v-if="unread" class="notification-count">{{ unread > 99 ? '99+' : unread }}</span>
       <span v-else-if="counting" class="notification-counting" aria-hidden="true">…</span>
@@ -153,16 +153,16 @@ onUnmounted(() => {
     <ToastNotice v-if="!expanded" :model-value="error" kind="error" />
     <ToastNotice v-if="!expanded" v-model="notice" />
     <dialog id="notifications-dialog" ref="dialog" aria-labelledby="notifications-title" @cancel.prevent="close" @close="onClose" @click="backdrop" @keydown="trapFocus">
-      <header><h2 id="notifications-title">Notificações <small v-if="unread">{{ unread }} não lidas</small></h2><button type="button" aria-label="Fechar notificações" @click="close">×</button></header>
+      <header><h2 id="notifications-title">Notificações <small v-if="unread">{{ unread }} não lidas</small></h2><button data-action="ghost" class="ui-action" type="button" aria-label="Fechar notificações" @click="close">×</button></header>
       <div class="notifications-body">
         <p class="notifications-caption">Comentários recebidos nos seus livros. Clique para abrir a página e a conversa.</p>
-        <div class="notifications-actions"><button type="button" :disabled="busy || loading" @click="load()">Atualizar</button><button type="button" :disabled="busy || loading || !unread" @click="markRead()">Marcar todas como lidas</button></div>
+        <div class="notifications-actions"><button data-action="ghost" class="ui-action" type="button" :disabled="busy || loading" @click="load()"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button><button data-action="ghost" class="ui-action notification-mark-read" type="button" :disabled="busy || loading || !unread" @click="markRead()">Marcar todas como lidas</button></div>
         <ToastNotice v-if="expanded" :model-value="error" kind="error" /><ToastNotice v-if="expanded" v-model="notice" />
         <p v-if="!loading && !items.length && !error" class="notifications-empty">Nenhuma notificação por enquanto.</p>
-        <ul v-if="items.length"><li v-for="item in items" :key="item.id"><button class="notification-item" :class="{ unread: !item.read_at }" type="button" :disabled="busy || loading" @click="markRead(item)"><span class="notification-indicator" aria-hidden="true"></span><span><strong>{{ item.display_name }}</strong> comentou em <strong>{{ item.book_title }}</strong><span class="notification-meta">Página {{ item.page_number }} · {{ formatDate(item.created_at) }}{{ !item.read_at ? ' · Não lida' : '' }}</span></span><span aria-hidden="true">↗</span></button></li></ul>
-        <button v-if="more" type="button" :disabled="busy || loading" @click="load(true)">Mostrar mais notificações</button>
+        <ul v-if="items.length"><li v-for="item in items" :key="item.id"><button class="notification-item" :class="{ unread: !item.read_at }" type="button" :disabled="busy || loading" @click="markRead(item)"><span class="notification-indicator" aria-hidden="true"></span><span><strong>{{ item.display_name }}</strong> comentou em <strong>{{ item.book_title }}</strong><span class="notification-meta">Página {{ item.page_number }} · {{ formatDate(item.created_at) }}{{ !item.read_at ? ' · Não lida' : '' }}</span></span><span aria-hidden="true">→</span></button></li></ul>
+        <button data-action="ghost" class="ui-action" v-if="more" type="button" :disabled="busy || loading" @click="load(true)">Mostrar mais notificações</button>
       </div>
-      <footer><span>Somente notificações dos seus livros.</span><button type="button" @click="close">Concluir</button></footer>
+      <footer><span>Somente notificações dos seus livros.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
     </dialog>
     </Teleport>
   </div>
@@ -186,6 +186,8 @@ header > button { font-size: 24px; width: 44px; padding: 0; }
 .notifications-body { flex: 1; min-height: 0; padding: 20px 24px; overflow-y: auto; overscroll-behavior: contain; }
 .notifications-caption, .notifications-empty { color: var(--muted); font-size: 13px; line-height: 1.7; }
 .notifications-caption { margin: 0 0 16px; }
+.notification-mark-read { border-color: transparent; background: transparent; font-weight: 400; color: var(--muted); }
+.notification-mark-read:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 8%, transparent); color: var(--green); }
 .notifications-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 ul { margin: 0 0 16px; padding: 0; list-style: none; }
 li + li { border-top: 1px solid var(--line); }

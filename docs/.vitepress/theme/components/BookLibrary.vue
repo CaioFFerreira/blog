@@ -456,7 +456,7 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     <p class="eyebrow">UM ESPAÇO SÓ SEU</p>
     <h1>Boas leituras<br>começam <em>aqui.</em></h1>
     <p>Guarde seus livros, retome de onde parou e acompanhe cada leitura. Entre na sua conta para abrir sua biblioteca privada.</p>
-    <button class="library-primary" type="button" :disabled="authBusy" @click="signIn('/livros.html')">
+    <button data-action="primary" class="ui-action library-primary" type="button" :disabled="authBusy" @click="signIn('/livros.html')">
       <span class="google-letter" aria-hidden="true">G</span>{{ authBusy ? 'Entrando…' : 'Entrar com Google' }}<span aria-hidden="true">↗</span>
     </button>
     <small>Seus livros e suas marcações ficam na sua conta.</small>
@@ -476,9 +476,9 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     <section v-show="activeTab === 'books'" id="library-panel-books" role="tabpanel" aria-labelledby="library-tab-books" tabindex="0">
     <header class="library-intro">
       <div><p class="eyebrow">{{ selectedFriend ? 'UMA ESTANTE AMIGA' : 'SEU PRÓXIMO CAPÍTULO' }}</p><h1 v-if="selectedFriend">Estante de <em>{{ selectedFriend.display_name }}.</em></h1><h1 v-else-if="ownerFilter === 'all'">Todas as estantes, <em>boas leituras.</em></h1><h1 v-else>Sua estante, <em>seu ritmo.</em></h1><p>{{ selectedFriend ? 'Explore os livros do seu amigo. As páginas salvas e os status abaixo são seus, sem alterar a leitura dele.' : `Olá, ${firstName}. Que tal reservar um tempo para uma boa leitura?` }}</p></div>
-      <button v-if="!selectedFriend" class="library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span aria-hidden="true">+</span> Adicionar livro</button>
+      <button data-action="open" v-if="!selectedFriend" class="ui-action library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span aria-hidden="true">+</span> Adicionar livro</button>
     </header>
-    <div v-if="selectedFriend" class="shared-shelf-note"><span>Compartilhada por {{ selectedFriend.display_name }} · Seu progresso é individual.</span><button class="library-secondary" type="button" @click="visitShelf(null)">← Minha estante</button></div>
+    <div v-if="selectedFriend" class="shared-shelf-note"><span>Compartilhada por {{ selectedFriend.display_name }} · Seu progresso é individual.</span><button data-action="navigate" class="ui-action library-secondary" type="button" @click="visitShelf(null)">← Minha estante</button></div>
     <div class="library-stats" aria-label="Resumo da biblioteca">
       <div><span>NA ESTANTE</span><strong>{{ counts.all.toString().padStart(2, '0') }}</strong><small>livros para explorar</small></div>
       <div><span>EM ANDAMENTO</span><strong>{{ counts.reading.toString().padStart(2, '0') }}</strong><small>capítulos acontecendo</small></div>
@@ -487,7 +487,7 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     </div>
     <dialog v-if="!selectedFriend" id="upload-book" ref="uploadDialog" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description" @cancel.prevent="closeUpload" @close="onUploadClose" @click="uploadBackdrop" @keydown="uploadFocus">
     <form class="library-upload" @submit.prevent="uploadBook">
-      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
+      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button data-action="ghost" class="ui-action upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
       <div class="upload-modal-body">
       <p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
@@ -495,14 +495,14 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
       <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Apenas seus amigos aceitos. Exige login.</small></span></label></fieldset>
       <ToastNotice v-if="showUpload" :model-value="error" kind="error" />
       </div>
-      <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
+      <div class="upload-actions"><button data-action="primary" class="ui-action library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button data-action="ghost" class="ui-action library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
     </form>
     </dialog>
     <ToastNotice v-if="!showUpload" :model-value="error" kind="error" />
-    <button v-if="error && !books.length && !uploading" class="library-secondary" type="button" @click="loadBooks">Tentar novamente</button>
+    <button data-action="ghost" v-if="error && !books.length && !uploading" class="ui-action library-secondary" type="button" @click="loadBooks"><span class="action-icon" aria-hidden="true">↻</span>Tentar novamente</button>
     <ToastNotice v-model="notice" />
     <section v-if="activeBook && pdfUrl" class="library-reader" aria-label="Leitor de PDF">
-      <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button class="library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
+      <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button data-action="ghost" class="ui-action library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
       <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="readerInitialPage" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" @ready="readerPageReady = $event" />
       <PageComments :key="pdfUrl" :book-id="activeBook.id" :page="page" :book-title="activeBook.title" :disabled="!readerPageReady" :auto-open="readerOpenComments" />
     </section>
@@ -512,8 +512,8 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
       <label class="library-search"><span class="filter-label">Buscar livro</span><span class="search-input"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg><input v-model="search" type="search" aria-label="Buscar livros por título ou autor" placeholder="Título ou autor…"></span></label>
     </div>
     <p v-if="loading" class="library-empty" role="status">Buscando suas próximas leituras…</p>
-    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>{{ selectedFriend ? 'Esta estante ainda não tem livros.' : 'Sua estante começa com um livro.' }}</h2><p>{{ selectedFriend ? 'Quando seu amigo adicionar um PDF, ele aparecerá aqui para você.' : 'Adicione seu primeiro PDF e encontre aqui um cantinho para ler no seu ritmo.' }}</p><button v-if="!selectedFriend" class="library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload">+ Adicionar meu primeiro livro</button></div>
-    <div v-else-if="!filtered.length && !error" class="library-empty"><h2>Nenhum livro por aqui.</h2><p>Experimente outro título, autor ou filtro de leitura.</p><button class="library-secondary" type="button" @click="search = ''; filter = 'all'">Limpar filtros</button></div>
+    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>{{ selectedFriend ? 'Esta estante ainda não tem livros.' : 'Sua estante começa com um livro.' }}</h2><p>{{ selectedFriend ? 'Quando seu amigo adicionar um PDF, ele aparecerá aqui para você.' : 'Adicione seu primeiro PDF e encontre aqui um cantinho para ler no seu ritmo.' }}</p><button data-action="open" v-if="!selectedFriend" class="ui-action library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload">+ Adicionar meu primeiro livro</button></div>
+    <div v-else-if="!filtered.length && !error" class="library-empty"><h2>Nenhum livro por aqui.</h2><p>Experimente outro título, autor ou filtro de leitura.</p><button data-action="ghost" class="ui-action library-secondary" type="button" @click="search = ''; filter = 'all'">Limpar filtros</button></div>
     <div v-else class="books-grid">
       <article v-for="(book, index) in visibleBooks" :key="book.id" class="book-card">
         <div class="book-cover" :class="`cover-${index % 4}`"><span class="cover-format" aria-hidden="true">PDF</span><h2 class="cover-title">{{ book.title }}</h2><span v-if="book.author" class="cover-author">{{ book.author }}</span><span class="cover-mark" aria-hidden="true">c.</span><span class="cover-lines" aria-hidden="true"></span></div>
@@ -522,12 +522,12 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
             <label class="book-status-label"><span class="book-control-title">Leitura</span><span class="book-select"><select :value="book.status" :disabled="!!saving" :aria-label="`Status de leitura de ${book.title}`" @change="changeStatus(book, $event)"><option value="want_read">Quero ler</option><option value="reading">Lendo</option><option value="read">Lido</option></select><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>
             <label v-if="book.owner_id === uid" class="book-status-label book-visibility-control"><span class="book-control-title">Visibilidade</span><span class="book-select"><select :value="book.visibility" :disabled="!!savingVisibility" :aria-label="`Privacidade de ${book.title}`" @change="changeVisibility(book, $event)"><option value="private">Privado</option><option value="friends">Amigos</option></select><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>
           </div>
-          <button class="book-read" type="button" :disabled="opening === book.id" @click="openBook(book)">{{ opening === book.id ? 'Abrindo PDF…' : book.status === 'reading' ? 'Continuar leitura' : 'Abrir livro' }}<span aria-hidden="true">↗</span></button>
-          <button v-if="book.owner_id === uid" class="book-delete" type="button" :disabled="!!deletingBook" :aria-label="`Excluir livro ${book.title}`" @click="deleteBook(book)">{{ deletingBook === book.id ? 'Excluindo…' : 'Excluir livro' }}</button>
+          <button data-action="open" class="ui-action book-read" type="button" :disabled="opening === book.id" @click="openBook(book)">{{ opening === book.id ? 'Abrindo PDF…' : book.status === 'reading' ? 'Continuar leitura' : 'Abrir livro' }}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 5v15m0-15C9 3 5 3 3 4v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-6-1-9 1Z" /></svg></button>
+          <button data-action="danger" v-if="book.owner_id === uid" class="ui-action book-delete" type="button" :disabled="!!deletingBook" :aria-label="`Excluir livro ${book.title}`" @click="deleteBook(book)">{{ deletingBook === book.id ? 'Excluindo…' : 'Excluir livro' }}</button>
         </div>
       </article>
     </div>
-    <button v-if="visibleCount < filtered.length" class="library-secondary load-more" type="button" @click="visibleCount += 12">Mostrar mais livros</button>
+    <button data-action="ghost" v-if="visibleCount < filtered.length" class="ui-action library-secondary load-more" type="button" @click="visibleCount += 12">Mostrar mais livros</button>
     <footer class="library-footer"><span>SEU ESPAÇO PARA LER E DESCOBRIR.</span><span>{{ filtered.length }} {{ filtered.length === 1 ? 'livro' : 'livros' }} na seleção</span></footer>
     </section>
   </section>

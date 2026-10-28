@@ -220,3 +220,17 @@ A exclusão de livros exige a migração 006. Só o dono pode excluir, com confi
 A migração 007 adiciona notificações para novos comentários de outras pessoas nos livros do dono. O trigger gera os registros no banco; o cliente não pode fabricar notificações, trocar destinatários ou ler notificações alheias. Comentários próprios e edições não geram avisos. Ao excluir o comentário ou o livro, os avisos relacionados são removidos por cascata. Não há notificações retroativas para comentários anteriores à migração.
 
 O sininho do cabeçalho mostra o total de não lidas. Consulta a contagem ao entrar, ao voltar à janela e a cada 60 segundos enquanto o site está visível; não são notificações push nem envio de e-mail. A lista carrega ao abrir, em lotes de 50, com rolagem central e cabeçalho/rodapé fixos. É possível atualizar e marcar todas como lidas. Clicar marca o aviso como lido e abre o próprio livro na página indicada, com o painel de comentários aberto. Isso não sobrescreve a página salva. Livros fora do lote inicial de 1.000 também podem ser abertos por uma notificação, com consulta individual que valida o dono e as permissões. No celular, o sininho está no menu principal.
+
+### Padrão visual das ações
+
+Os controles da biblioteca e da conta usam `actions.css`, com a classe `ui-action` e `data-action` para manter o mesmo significado em telas e modais:
+
+| Variante | Uso | Aparência |
+| --- | --- | --- |
+| `primary` | Salvar, enviar, publicar e aceitar | Verde preenchido |
+| `open` | Abrir livro, formulário, edição ou painel | Contorno discreto e texto verde |
+| `navigate` | Ir para página ou estante | Texto verde e seta, sem borda |
+| `ghost` | Atualizar, copiar, marcar como lida, limpar, cancelar edição e fechar | Sem preenchimento/borda, texto discreto |
+| `danger` | Excluir livro/comentário, remover amizade, recusar/cancelar convite | Vermelho com contorno e fundo sutil |
+
+As variantes respeitam temas claro/escuro, foco de teclado, área de toque mínima de 44px, redução de movimento e cursor normal quando desabilitadas. Sair da conta é neutro: não apaga dados. Abas, filtros e itens de notificação mantêm seus padrões de seleção/lista.
