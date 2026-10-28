@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:auth": "node --experimental-strip-types tests/auth-errors.test.mjs",
     "test:audio": "node --experimental-strip-types tests/focus-audio.test.mjs",
     "test:pomodoro": "node --experimental-strip-types tests/pomodoro.test.mjs",
     "test:quiz": "node --experimental-strip-types tests/quiz.test.mjs",
@@ -13,6 +14,7 @@
     "preview": "vitepress preview docs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "vue": "^3.5.42"
   },
   "devDependencies": {

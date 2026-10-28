@@ -35,6 +35,16 @@ O banco editorial fica em `docs/.vitepress/theme/quiz-bank.json`, com uma entrad
 
 ## Desenvolvimento
 
+### Login com Google
+
+O cabeçalho oferece **Entrar com Google**, mostra o nome da conta autenticada e permite **Sair** neste navegador. O cliente Supabase é carregado apenas no navegador, restaura a sessão após recarregar e acompanha mudanças de autenticação. Falhas de login aparecem junto ao botão. O retorno OAuth é processado antes de o roteador iniciar; o resultado de `auth.initialize()` é conferido para que erros do provedor não sejam confundidos com uma visita sem login. A interface mostra uma orientação e um código seguro, sem expor tokens nem a URL de callback. `npm run test:auth` verifica esse tratamento. Quizzes e Pomodoro continuam locais. A biblioteca usa a conta para armazenar PDFs e progresso de leitura no Supabase.
+
+As credenciais públicas do projeto ficam em `docs/.vitepress/theme/supabase.ts`. A chave publicável pode integrar o bundle; nunca substitua por `service_role`, `sb_secret_…` ou pelo segredo OAuth do Google. O acesso a tabelas e arquivos deve ser protegido por políticas RLS.
+
+No painel Supabase, habilite o provedor Google e cadastre suas credenciais OAuth. Em **Authentication → URL Configuration**, configure `https://caiofferreira.github.io/blog/` como Site URL e inclua `https://caiofferreira.github.io/blog/`, `https://caiofferreira.github.io/blog/livros.html` e `http://localhost:5173/**` nas Redirect URLs. Se o servidor local usar outra porta, inclua o endereço correspondente. No Google Cloud, a URI de redirecionamento OAuth continua sendo `https://jwnjaaxjsaserwtypphn.supabase.co/auth/v1/callback`.
+
+O login iniciado na biblioteca retorna diretamente para `livros.html`, sem passar pela página inicial nem depender de sessionStorage. O endereço completo precisa estar autorizado no Supabase; para desenvolvimento, `http://localhost:5173/**` inclui a raiz e a biblioteca. Se o retorno não estiver autorizado, o Supabase pode usar o Site URL como destino. Usa o caminho base do VitePress: `/` em desenvolvimento e `/blog/` no Pages. Para testar o caminho publicado localmente, execute `BASE_PATH=/blog/ npm run build` e depois `BASE_PATH=/blog/ npm run preview`; autorize também a URL de preview no Supabase. Teste entrar, recarregar, navegar e sair. Se o aplicativo Google estiver em modo de teste, adicione a conta usada aos usuários de teste no Google Cloud.
+
 O menu principal oferece **Música**, um player independente do Pomodoro, disponível no desktop e no menu mobile. Ele reproduz o arquivo local `src/assets/audio/Just One More Drink -- Jazz Noir - Pop Studio.mp3`, em MP3 estéreo. O volume do player fica em 100%, com ajuste pelo computador ou dispositivo.
 
 O áudio carrega apenas após clicar em **Reproduzir som**, toca em loop e retoma da posição atual após uma pausa. Fechar o painel, recolher o menu e navegar pelos artigos não interrompe a reprodução. Recarregar a página mantém o player pausado. O Vite publica o arquivo com uma URL própria, compatível com o caminho base da hospedagem. A desmontagem pausa e libera o recurso de mídia. `npm run test:audio` verifica reprodução, pausa, retomada, liberação e falhas de carregamento.
@@ -54,6 +64,24 @@ npm run dev
 ```
 
 `npm run typecheck` valida TypeScript e rejeita variáveis e parâmetros sem uso. `npm run build` valida e gera HTML estático em `docs/.vitepress/dist`. `npm run preview` serve o resultado localmente.
+
+## Biblioteca privada de PDFs
+
+Acesse **Livros** no menu (`/livros.html`, ou `/blog/livros.html` no Pages). Sem sessão, a rota exibe apenas o convite para entrar, sem buscar o catálogo ou os arquivos. O cabeçalho e a biblioteca compartilham a sessão; o nome da conta e o botão de sair aparecem no cabeçalho. Sair ou trocar de usuário limpa imediatamente catálogo, busca, formulário e leitor; respostas antigas são descartadas. O HTML estático dessa rota contém apenas a estrutura pública da tela, nunca dados de livros.
+
+### Configuração necessária no Supabase
+
+1. No painel do projeto, abra **SQL Editor → New query**.
+2. Cole o conteúdo de `supabase/migrations/202610280001_private_library.sql` e execute **Run**. O script cria a tabela `library_books`, o bucket privado `library-pdfs` e as políticas RLS. Não exige colocar senhas ou chaves secretas no site.
+3. Entre com Google no site, abra **Livros → Adicionar livro**, selecione um PDF e informe título e autor opcional.
+
+Cada conta tem sua própria biblioteca. A tabela permite consultar e adicionar apenas registros do usuário autenticado; a atualização pelo frontend é limitada ao status e à última página. O bucket aceita PDFs de até 50 MiB, em caminhos `<user-id>/<uuid>.pdf`, com leitura e envio restritos à conta proprietária. As políticas restritivas também impedem que políticas permissivas de outros buckets liberem esses arquivos. O bucket permanece privado. Sem a migração, a tela mostra falha de carregamento e não expõe dados.
+
+Há busca por título/autor, filtros de status, contadores e listagem em grupos de 12 (até 1.000 registros consultados). Capas tipográficas são geradas em CSS; nenhum PDF é baixado ao listar os livros. Ao abrir um livro, o aplicativo baixa somente aquele PDF com autenticação e cria uma URL temporária no navegador. Fechar o leitor, sair ou trocar de conta revoga essa URL. Arquivos já baixados ou abertos em outra aba pelo usuário não podem ser recolhidos pelo site.
+
+O leitor usa o visualizador de PDF do navegador e oferece uma alternativa para abrir em outra aba, útil em dispositivos sem suporte a PDF embutido. A página é salva manualmente em **Última página → Salvar página**, pois o visualizador nativo não fornece eventos de mudança de página. Abrir um livro ainda não iniciado muda seu status para **Lendo**; o seletor permite marcar **Lido**. As marcações são persistidas na conta. PDFs devem ser adicionados pelo formulário para criar também seu registro no catálogo.
+
+Para validar a instalação real: entre com duas contas distintas, envie um livro na primeira e confirme que ele não aparece na segunda; sem sessão, teste tanto a rota quanto as APIs de tabela e Storage; confirme status e página após recarregar; abra um PDF e saia para conferir a limpeza do leitor. A execução da migração e o OAuth real precisam ser validados no projeto Supabase pelo proprietário.
 
 ## Publicar um artigo
 

@@ -232,7 +232,7 @@ h1 em { font-style: normal; color: var(--green); }
   .reading-preview a { font-size: 18px; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .topbar { flex-wrap: wrap; gap: 12px; padding-block: 16px; }
   .menu-toggle { display: inline-flex; font-size: 13px; }
   .header-actions { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
@@ -243,6 +243,9 @@ h1 em { font-style: normal; color: var(--green); }
   .header-actions a { padding-inline: 12px; border-radius: 5px; }
   .header-actions a:hover { color: var(--green); background: var(--surface); }
   .header-actions .theme-toggle { align-self: flex-end; }
+}
+
+@media (max-width: 640px) {
   .intro { padding: 36px 0 30px; }
   h1 { margin: 14px 0; font-size: clamp(30px, 8vw, 42px); line-height: 1.18; }
   .library-stamp { display: none; }
