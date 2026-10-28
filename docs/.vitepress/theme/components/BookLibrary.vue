@@ -4,6 +4,7 @@ import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
 import LibraryFriends from './LibraryFriends.vue'
+import PdfReader from './PdfReader.vue'
 import { bookFields, withReadingProgress, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
@@ -290,7 +291,8 @@ async function openBook(book: LibraryBook) {
     if (ticket === generation && request === openRequest) opening.value = null
   }
 }
-function savePage() {
+function savePage(currentPage = page.value) {
+  page.value = currentPage
   if (!activeBook.value || !Number.isInteger(page.value) || page.value < 1 || page.value > 100000) {
     error.value = 'Informe uma página válida, a partir de 1.'
     return
@@ -346,9 +348,7 @@ function savePage() {
     <p v-if="notice" class="library-notice" role="status">{{ notice }}</p>
     <section v-if="activeBook && pdfUrl" class="library-reader" aria-label="Leitor de PDF">
       <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button class="library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
-      <div class="reader-controls"><form @submit.prevent="savePage"><label>Última página <input v-model.number="page" type="number" min="1" max="100000" required></label><button class="library-secondary" type="submit" :disabled="!!saving">Salvar página</button></form><a :href="pdfUrl" target="_blank" rel="noopener">Abrir PDF em outra aba ↗</a></div>
-      <p class="reader-hint">Anote e salve a página antes de sair. Se o leitor não aparecer no seu dispositivo, abra o PDF em outra aba.</p>
-      <iframe :key="pdfUrl" :src="`${pdfUrl}#page=${activeBook.last_page}`" :title="`Ler ${activeBook.title}`"></iframe>
+      <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="activeBook.last_page" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" />
     </section>
     <div class="library-toolbar" role="region" aria-label="Filtros da biblioteca">
       <label class="shelf-filter"><span class="filter-label">Estante</span><span class="shelf-select"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h6v16H4zM14 4h6v16h-6zM4 8h6M14 8h6" /></svg><select :value="ownerFilter" aria-label="Filtrar livros por dono" @change="changeShelf"><option value="mine">Minha estante</option><option value="all">Todas as estantes</option><option v-for="friend in friends" :key="friend.other_id" :value="friend.other_id">{{ friend.display_name }}</option></select><svg class="select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>
@@ -463,14 +463,13 @@ button:disabled { opacity: .55; cursor: wait; }
 .library-error { color: var(--orange); }
 .library-error button { min-height: 44px; border: 0; color: var(--green); background: transparent; text-decoration: underline; cursor: pointer; }
 .library-notice { color: var(--green); }
-.library-reader { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; margin-block: 28px; }
+.library-reader { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: visible; margin-block: 28px; }
 .reader-top { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .reader-top h2 { margin: 8px 0 0; font-size: 24px; overflow-wrap: anywhere; scroll-margin-top: 20px; }
 .reader-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-top: 1px solid var(--line); font-size: 12px; }
 .reader-controls form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .reader-controls input { width: 84px; min-height: 44px; margin-left: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); }
 .reader-hint { padding: 0 24px; font-size: 11px; color: var(--muted); line-height: 1.7; }
-.library-reader iframe { display: block; width: 100%; height: 75vh; min-height: 400px; border: 0; background: #343434; }
 .library-empty { text-align: center; padding: 70px 24px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
 .library-empty > span { font-size: 48px; color: var(--green); }
 .library-empty h2 { color: var(--ink); font-size: 26px; letter-spacing: -.04em; }

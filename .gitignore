@@ -31,3 +31,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated PDF.js fonts and decoders (prepared before dev/build)
+docs/public/pdfjs-assets/
