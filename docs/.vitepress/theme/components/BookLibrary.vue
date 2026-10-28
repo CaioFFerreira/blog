@@ -6,7 +6,7 @@ import { getSupabase } from '../supabase'
 import LibraryFriends from './LibraryFriends.vue'
 import PdfReader from './PdfReader.vue'
 import { pdfSizeLabel, uploadErrorMessage, type UploadStage } from '../upload-errors'
-import { bookFields, withReadingProgress, type BookVisibility, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
+import { bookFields, withReadingProgress, type BookVisibility, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
 const books = ref<LibraryBook[]>([])
@@ -395,11 +395,11 @@ function savePage(currentPage = page.value) {
     <div v-else-if="!filtered.length && !error" class="library-empty"><h2>Nenhum livro por aqui.</h2><p>Experimente outro título, autor ou filtro de leitura.</p><button class="library-secondary" type="button" @click="search = ''; filter = 'all'">Limpar filtros</button></div>
     <div v-else class="books-grid">
       <article v-for="(book, index) in visibleBooks" :key="book.id" class="book-card">
-        <div class="book-cover" :class="`cover-${index % 4}`" aria-hidden="true"><span class="cover-format">BIBLIOTECA PESSOAL / PDF</span><span class="cover-title">{{ book.title }}</span><span class="cover-author">{{ book.author || 'Uma nova leitura' }}</span><span class="cover-mark">c.</span><span class="cover-lines"></span></div>
-        <div class="book-details"><span class="book-status" :class="book.status"><i></i>{{ statusLabels[book.status] }}</span><h2>{{ book.title }}</h2><span class="book-owner"><span aria-hidden="true">◉</span> De {{ bookOwnerName(book.owner_id) }}</span><p>{{ book.author || 'Autor não informado' }}</p><span class="book-privacy" :class="book.visibility">{{ book.owner_id === uid ? (book.visibility === 'private' ? 'Seu livro · privado' : 'Seu livro · compartilhado') : 'Compartilhado pelo dono' }}</span><div class="book-page">{{ book.status === 'read' ? 'Leitura concluída ✓' : book.last_page > 1 ? `Última página salva: ${book.last_page}` : 'Uma boa leitura espera por você' }}</div>
-          <div class="book-preferences">
-            <label class="book-status-label"><span class="book-control-title">Sua leitura <small>Só você vê seu progresso</small></span><select :value="book.status" :disabled="!!saving" :aria-label="`Status de leitura de ${book.title}`" @change="changeStatus(book, $event)"><option value="want_read">Quero ler</option><option value="reading">Lendo</option><option value="read">Lido</option></select></label>
-            <label v-if="book.owner_id === uid" class="book-status-label book-visibility-control"><span class="book-control-title"><span class="visibility-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>Quem pode ler seu livro</span><small>Você pode alterar quando quiser</small></span><select :value="book.visibility" :disabled="!!savingVisibility" :aria-label="`Privacidade de ${book.title}`" @change="changeVisibility(book, $event)"><option value="private">Privado · somente eu</option><option value="friends">Compartilhar com amigos</option></select></label>
+        <div class="book-cover" :class="`cover-${index % 4}`"><span class="cover-format" aria-hidden="true">PDF</span><h2 class="cover-title">{{ book.title }}</h2><span v-if="book.author" class="cover-author">{{ book.author }}</span><span class="cover-mark" aria-hidden="true">c.</span><span class="cover-lines" aria-hidden="true"></span></div>
+        <div class="book-details"><span class="book-owner">{{ book.owner_id === uid ? 'Seu livro' : `De ${bookOwnerName(book.owner_id)}` }}</span><div v-if="book.last_page > 1" class="book-page">Página salva: {{ book.last_page }}</div>
+          <div class="book-preferences" :class="{ 'has-visibility': book.owner_id === uid }">
+            <label class="book-status-label"><span class="book-control-title">Leitura</span><select :value="book.status" :disabled="!!saving" :aria-label="`Status de leitura de ${book.title}`" @change="changeStatus(book, $event)"><option value="want_read">Quero ler</option><option value="reading">Lendo</option><option value="read">Lido</option></select></label>
+            <label v-if="book.owner_id === uid" class="book-status-label book-visibility-control"><span class="book-control-title">Visibilidade</span><select :value="book.visibility" :disabled="!!savingVisibility" :aria-label="`Privacidade de ${book.title}`" @change="changeVisibility(book, $event)"><option value="private">Privado</option><option value="friends">Amigos</option></select></label>
           </div>
           <button class="book-read" type="button" :disabled="opening === book.id" @click="openBook(book)">{{ opening === book.id ? 'Abrindo PDF…' : book.status === 'reading' ? 'Continuar leitura' : 'Abrir livro' }}<span aria-hidden="true">↗</span></button>
         </div>
@@ -411,8 +411,6 @@ function savePage(currentPage = page.value) {
 </template>
 
 <style scoped>
-.book-privacy { align-self: flex-start; display: inline-flex; margin-top: 12px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--green); font-size: 10px; line-height: 1.5; }
-.book-privacy.private { color: var(--muted); }
 .upload-privacy { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
 .upload-privacy legend { padding-inline: 6px; color: var(--muted); font-size: 12px; }
 .library-upload .upload-privacy label { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
@@ -473,25 +471,19 @@ button:disabled { opacity: .55; cursor: wait; }
 .cover-2 { background: #913f32; color: #fff0d8; }
 .cover-3 { background: #283f4b; color: #e6e5d5; }
 .cover-format { font: 8px/1.6 var(--mono); letter-spacing: .14em; z-index: 1; }
-.cover-title { font: 500 clamp(21px, 2.2vw, 29px)/1.12 var(--display); letter-spacing: -.04em; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; z-index: 1; }
+.cover-title { margin: 0; font: 500 clamp(21px, 2.2vw, 29px)/1.12 var(--display); letter-spacing: -.04em; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; z-index: 1; }
 .cover-author { font-size: 11px; opacity: .75; z-index: 1; }
 .cover-mark { margin-top: auto; font: 600 34px var(--display); z-index: 1; }
 .cover-lines { position: absolute; width: 240px; height: 240px; border: 1px solid currentColor; border-radius: 50%; right: -110px; bottom: -100px; box-shadow: 0 0 0 15px #ffffff09, 0 0 0 30px #ffffff09, 0 0 0 45px #ffffff09, 0 0 0 60px #ffffff09; opacity: .4; }
 .book-details { display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 20px; }
-.book-status { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font: 9px var(--mono); color: var(--muted); }
-.book-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.book-status.reading { color: var(--orange); }
-.book-status.read { color: var(--green); }
 .book-details h2 { font-size: 17px; line-height: 1.35; letter-spacing: -.025em; margin: 12px 0 6px; overflow-wrap: anywhere; }
 .book-details > p { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-.book-page { min-height: 36px; margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.6; }
-.book-preferences { display: grid; gap: 16px; padding: 16px; margin-top: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.book-page { margin: 0 0 4px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.book-preferences { display: grid; gap: 12px; margin-top: auto; padding-top: 14px; }
+.book-preferences.has-visibility { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .book-status-label { display: grid; min-width: 0; gap: 10px; color: var(--ink); font-size: 12px; }
 .book-control-title { display: grid; gap: 5px; font-weight: 500; line-height: 1.5; }
-.book-control-title small { color: var(--muted); font-size: 10px; font-weight: 400; }
-.visibility-title { display: flex; align-items: center; gap: 6px; }
-.visibility-title svg { flex-shrink: 0; color: var(--muted); }
-.book-visibility-control { border-top: 1px solid var(--line); padding-top: 16px; }
+.book-visibility-control { padding: 0; }
 .book-status-label select { width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 10px 8px; border: 1px solid var(--line); border-radius: 6px; font: 12px var(--font-sans); background: var(--surface); color: var(--ink); cursor: pointer; }
 .book-status-label select:focus-visible { outline-offset: 2px; }
 .book-status-label select:disabled { opacity: .6; cursor: wait; }
