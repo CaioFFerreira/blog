@@ -6,7 +6,7 @@ import { getSupabase } from '../supabase'
 import LibraryFriends from './LibraryFriends.vue'
 import PdfReader from './PdfReader.vue'
 import { pdfSizeLabel, uploadErrorMessage, type UploadStage } from '../upload-errors'
-import { bookFields, withReadingProgress, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
+import { bookFields, withReadingProgress, type BookVisibility, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
 const books = ref<LibraryBook[]>([])
@@ -71,6 +71,8 @@ function uploadFocus(event: KeyboardEvent) {
 const uploading = ref(false)
 const title = ref('')
 const author = ref('')
+const uploadVisibility = ref<BookVisibility>('private')
+const savingVisibility = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement>()
 const file = ref<File | null>(null)
 const opening = ref<string | null>(null)
@@ -130,6 +132,8 @@ function resetPrivateState() {
   author.value = ''
   uploading.value = false
   saving.value = null
+  savingVisibility.value = null
+  uploadVisibility.value = 'private'
 }
 async function loadBooks() {
   const owner = uid.value
@@ -222,7 +226,7 @@ async function uploadBook() {
     if (ticket !== generation || uid.value !== owner) return
     stage = 'catalog'
     const { data, error: insertError } = await client.from('library_books').insert({
-      owner_id: owner, title: title.value.trim(), author: author.value.trim(), pdf_path: path,
+      owner_id: owner, title: title.value.trim(), author: author.value.trim(), pdf_path: path, visibility: uploadVisibility.value,
     }).select(bookFields).single()
     if (insertError) {
       await client.storage.from(pdfBucket).remove([path])
@@ -232,6 +236,7 @@ async function uploadBook() {
     books.value.unshift(withReadingProgress(data as BookWithProgress))
     title.value = ''
     author.value = ''
+    uploadVisibility.value = 'private'
     file.value = null
     if (fileInput.value) fileInput.value.value = ''
     closeUpload()
@@ -240,6 +245,30 @@ async function uploadBook() {
     if (ticket === generation) error.value = uploadErrorMessage(failure, stage, selected.size)
   } finally {
     if (ticket === generation) uploading.value = false
+  }
+}
+async function changeVisibility(book: LibraryBook, event: Event) {
+  const owner = uid.value
+  const select = event.target as HTMLSelectElement
+  const visibility = select.value as BookVisibility
+  select.value = book.visibility
+  if (!owner || book.owner_id !== owner || savingVisibility.value || !['private', 'friends'].includes(visibility)) return
+  const ticket = generation
+  savingVisibility.value = book.id
+  error.value = ''
+  notice.value = ''
+  try {
+    const client = await getSupabase(withBase('/'))
+    const { data, error: updateError } = await client.from('library_books')
+      .update({ visibility }).eq('id', book.id).eq('owner_id', owner).select('visibility').single()
+    if (ticket !== generation || uid.value !== owner) return
+    if (updateError) throw updateError
+    book.visibility = data.visibility
+    notice.value = visibility === 'private' ? 'Livro privado. Somente você pode acessá-lo.' : 'Livro compartilhado com seus amigos aceitos.'
+  } catch {
+    if (ticket === generation) error.value = 'Não foi possível alterar a privacidade do livro. Tente novamente.'
+  } finally {
+    if (ticket === generation) savingVisibility.value = null
   }
 }
 async function saveBook(book: LibraryBook, changes: { status?: ReadingStatus; last_page?: number }) {
@@ -341,9 +370,10 @@ function savePage(currentPage = page.value) {
     </div>
     <dialog v-if="!selectedFriend" id="upload-book" ref="uploadDialog" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description" @cancel.prevent="closeUpload" @close="onUploadClose" @click="uploadBackdrop" @keydown="uploadFocus">
     <form class="library-upload" @submit.prevent="uploadBook">
-      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div><p id="upload-description">Escolha um PDF de até 50 MB. Seus amigos aceitos também poderão ler este PDF. As marcações de leitura são individuais.</p>
+      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div><p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
       <div class="upload-fields"><label>Título<input v-model="title" autofocus maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label><span class="upload-label-heading">Autor <small>(opcional)</small></span><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
+      <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Apenas seus amigos aceitos. Exige login.</small></span></label></fieldset>
       <p v-if="error" class="library-error" role="alert">{{ error }}</p>
       <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
     </form>
@@ -366,8 +396,11 @@ function savePage(currentPage = page.value) {
     <div v-else class="books-grid">
       <article v-for="(book, index) in visibleBooks" :key="book.id" class="book-card">
         <div class="book-cover" :class="`cover-${index % 4}`" aria-hidden="true"><span class="cover-format">BIBLIOTECA PESSOAL / PDF</span><span class="cover-title">{{ book.title }}</span><span class="cover-author">{{ book.author || 'Uma nova leitura' }}</span><span class="cover-mark">c.</span><span class="cover-lines"></span></div>
-        <div class="book-details"><span class="book-status" :class="book.status"><i></i>{{ statusLabels[book.status] }}</span><h2>{{ book.title }}</h2><span class="book-owner"><span aria-hidden="true">◉</span> De {{ bookOwnerName(book.owner_id) }}</span><p>{{ book.author || 'Autor não informado' }}</p><div class="book-page">{{ book.status === 'read' ? 'Leitura concluída ✓' : book.last_page > 1 ? `Última página salva: ${book.last_page}` : 'Uma boa leitura espera por você' }}</div>
-          <label class="book-status-label">Sua leitura<select :value="book.status" :disabled="!!saving" :aria-label="`Status de leitura de ${book.title}`" @change="changeStatus(book, $event)"><option value="want_read">Quero ler</option><option value="reading">Lendo</option><option value="read">Lido</option></select></label>
+        <div class="book-details"><span class="book-status" :class="book.status"><i></i>{{ statusLabels[book.status] }}</span><h2>{{ book.title }}</h2><span class="book-owner"><span aria-hidden="true">◉</span> De {{ bookOwnerName(book.owner_id) }}</span><p>{{ book.author || 'Autor não informado' }}</p><span class="book-privacy" :class="book.visibility">{{ book.owner_id === uid ? (book.visibility === 'private' ? 'Seu livro · privado' : 'Seu livro · compartilhado') : 'Compartilhado pelo dono' }}</span><div class="book-page">{{ book.status === 'read' ? 'Leitura concluída ✓' : book.last_page > 1 ? `Última página salva: ${book.last_page}` : 'Uma boa leitura espera por você' }}</div>
+          <div class="book-preferences">
+            <label class="book-status-label"><span class="book-control-title">Sua leitura <small>Só você vê seu progresso</small></span><select :value="book.status" :disabled="!!saving" :aria-label="`Status de leitura de ${book.title}`" @change="changeStatus(book, $event)"><option value="want_read">Quero ler</option><option value="reading">Lendo</option><option value="read">Lido</option></select></label>
+            <label v-if="book.owner_id === uid" class="book-status-label book-visibility-control"><span class="book-control-title"><span class="visibility-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>Quem pode ler seu livro</span><small>Você pode alterar quando quiser</small></span><select :value="book.visibility" :disabled="!!savingVisibility" :aria-label="`Privacidade de ${book.title}`" @change="changeVisibility(book, $event)"><option value="private">Privado · somente eu</option><option value="friends">Compartilhar com amigos</option></select></label>
+          </div>
           <button class="book-read" type="button" :disabled="opening === book.id" @click="openBook(book)">{{ opening === book.id ? 'Abrindo PDF…' : book.status === 'reading' ? 'Continuar leitura' : 'Abrir livro' }}<span aria-hidden="true">↗</span></button>
         </div>
       </article>
@@ -378,6 +411,15 @@ function savePage(currentPage = page.value) {
 </template>
 
 <style scoped>
+.book-privacy { align-self: flex-start; display: inline-flex; margin-top: 12px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--green); font-size: 10px; line-height: 1.5; }
+.book-privacy.private { color: var(--muted); }
+.upload-privacy { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.upload-privacy legend { padding-inline: 6px; color: var(--muted); font-size: 12px; }
+.library-upload .upload-privacy label { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
+.library-upload .upload-privacy input { width: 20px; min-height: 20px; height: 20px; margin: 0; padding: 0; flex-shrink: 0; accent-color: var(--green); }
+.upload-privacy label > span { display: grid; gap: 5px; }
+.upload-privacy strong { color: var(--ink); font-size: 13px; font-weight: 500; }
+.upload-privacy small { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .book-owner { display: flex; align-items: flex-start; gap: 6px; margin: 10px 0; color: var(--green); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .book-owner > span { flex-shrink: 0; font-size: 10px; }
 .reader-owner { color: var(--muted); font-size: 12px; line-height: 1.6; }
@@ -424,9 +466,9 @@ button:disabled { opacity: .55; cursor: wait; }
 @media (max-width: 560px) { .library-toolbar { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; border-radius: 10px; } .shelf-filter, .library-search, .reading-filter { grid-column: 1; grid-row: auto; } .shelf-filter { order: 0; } .library-search { order: 1; } .reading-filter { order: 2; } .library-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; } .library-filters button { min-height: 44px; font-size: 13px; } .shelf-select select, .library-search input { font-size: 16px; } .filter-label { margin-bottom: 8px; } }
 @media (prefers-reduced-motion: reduce) { .shelf-select, .search-input, .library-filters button { transition: none; } }
 .books-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px; }
-.book-card { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.book-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; transition: transform .2s, box-shadow .2s; }
 .book-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px #0000000d; }
-.book-cover { aspect-ratio: 4/4.7; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 16px; padding: 28px 26px; background: #234d3e; color: #f4f1dc; border-left: 8px solid #0002; }
+.book-cover { flex-shrink: 0; aspect-ratio: 4/4.7; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 16px; padding: 28px 26px; background: #234d3e; color: #f4f1dc; border-left: 8px solid #0002; }
 .cover-1 { background: #ded8c5; color: #343d34; }
 .cover-2 { background: #913f32; color: #fff0d8; }
 .cover-3 { background: #283f4b; color: #e6e5d5; }
@@ -435,17 +477,25 @@ button:disabled { opacity: .55; cursor: wait; }
 .cover-author { font-size: 11px; opacity: .75; z-index: 1; }
 .cover-mark { margin-top: auto; font: 600 34px var(--display); z-index: 1; }
 .cover-lines { position: absolute; width: 240px; height: 240px; border: 1px solid currentColor; border-radius: 50%; right: -110px; bottom: -100px; box-shadow: 0 0 0 15px #ffffff09, 0 0 0 30px #ffffff09, 0 0 0 45px #ffffff09, 0 0 0 60px #ffffff09; opacity: .4; }
-.book-details { padding: 20px; }
-.book-status { display: inline-flex; align-items: center; gap: 6px; font: 9px var(--mono); color: var(--muted); }
+.book-details { display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 20px; }
+.book-status { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font: 9px var(--mono); color: var(--muted); }
 .book-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .book-status.reading { color: var(--orange); }
 .book-status.read { color: var(--green); }
 .book-details h2 { font-size: 17px; line-height: 1.35; letter-spacing: -.025em; margin: 12px 0 6px; overflow-wrap: anywhere; }
 .book-details > p { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .book-page { min-height: 36px; margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.6; }
-.book-status-label { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; padding-block: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-.book-status-label select { max-width: 100%; min-height: 36px; padding: 6px; border: 1px solid var(--line); border-radius: 4px; font: 11px var(--font-sans); background: var(--paper); color: var(--ink); }
-.book-read { width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
+.book-preferences { display: grid; gap: 16px; padding: 16px; margin-top: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.book-status-label { display: grid; min-width: 0; gap: 10px; color: var(--ink); font-size: 12px; }
+.book-control-title { display: grid; gap: 5px; font-weight: 500; line-height: 1.5; }
+.book-control-title small { color: var(--muted); font-size: 10px; font-weight: 400; }
+.visibility-title { display: flex; align-items: center; gap: 6px; }
+.visibility-title svg { flex-shrink: 0; color: var(--muted); }
+.book-visibility-control { border-top: 1px solid var(--line); padding-top: 16px; }
+.book-status-label select { width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 10px 8px; border: 1px solid var(--line); border-radius: 6px; font: 12px var(--font-sans); background: var(--surface); color: var(--ink); cursor: pointer; }
+.book-status-label select:focus-visible { outline-offset: 2px; }
+.book-status-label select:disabled { opacity: .6; cursor: wait; }
+.book-read { margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
 .book-read:hover { border-color: var(--green); }
 .upload-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 24px 90px #0004; }
 .upload-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
@@ -496,6 +546,6 @@ button:disabled { opacity: .55; cursor: wait; }
 .gate-art b { position: absolute; right: 6px; bottom: -14px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--green); width: 45px; height: 45px; display: grid; place-items: center; font-size: 24px; }
 @media (max-width: 1000px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } .library-stats > p { padding-inline: 20px; } }
 @media (max-width: 760px) { .books-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .library-stats { grid-template-columns: repeat(3, 1fr); } .library-stats > p { display: none; } .library-stats > div:last-of-type { border: 0; } .library-intro { align-items: flex-start; flex-direction: column; padding-top: 32px; } .library-account { flex-wrap: wrap; } .library-search { width: 100%; } .library-search input { width: 100%; } .cover-title { font-size: 25px; } }
-@media (max-width: 480px) { .books-grid { grid-template-columns: 1fr; gap: 24px; } .book-card { display: flex; flex-direction: column; } .book-cover { aspect-ratio: auto; min-height: 230px; padding: 24px; gap: 12px; border-left-width: 6px; } .cover-title { font-size: clamp(22px, 6vw, 28px); line-height: 1.2; -webkit-line-clamp: 4; } .cover-format { font-size: 8px; } .cover-author { font-size: 11px; } .cover-mark { font-size: 28px; } .book-details { padding: 20px; } .book-details h2 { font-size: 19px; line-height: 1.4; } .book-owner { font-size: 12px; } .book-details > p { font-size: 13px; } .book-page { min-height: auto; margin-bottom: 18px; font-size: 12px; } .book-status-label { font-size: 12px; padding-block: 14px; } .book-status-label select { min-height: 44px; font-size: 14px; padding-inline: 12px; } .book-read { min-height: 48px; font-size: 14px; padding-inline: 14px; } .library-stats > div { padding: 16px 10px; } .library-stats div > span { font-size: 8px; } .library-stats strong { font-size: 30px; } .library-stats small { font-size: 10px; } .upload-fields { grid-template-columns: 1fr; } .library-upload { padding: 20px; } .reader-top { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 480px) { .books-grid { grid-template-columns: 1fr; gap: 24px; } .book-card { display: flex; flex-direction: column; } .book-cover { aspect-ratio: auto; min-height: 230px; padding: 24px; gap: 12px; border-left-width: 6px; } .cover-title { font-size: clamp(22px, 6vw, 28px); line-height: 1.2; -webkit-line-clamp: 4; } .cover-format { font-size: 8px; } .cover-author { font-size: 11px; } .cover-mark { font-size: 28px; } .book-details { padding: 20px; } .book-details h2 { font-size: 19px; line-height: 1.4; } .book-owner { font-size: 12px; } .book-details > p { font-size: 13px; } .book-page { min-height: auto; margin-bottom: 18px; font-size: 12px; } .book-status-label { font-size: 13px; } .book-status-label select { font-size: 16px; padding-inline: 10px; } .book-control-title small { font-size: 11px; } .book-read { min-height: 48px; font-size: 14px; padding-inline: 14px; } .library-stats > div { padding: 16px 10px; } .library-stats div > span { font-size: 8px; } .library-stats strong { font-size: 30px; } .library-stats small { font-size: 10px; } .upload-fields { grid-template-columns: 1fr; } .library-upload { padding: 20px; } .reader-top { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .book-card { transition: none; } }
 </style>

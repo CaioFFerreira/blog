@@ -1,3 +1,4 @@
+export type BookVisibility = 'private' | 'friends'
 export type ReadingStatus = 'want_read' | 'reading' | 'read'
 export interface LibraryBook {
   id: string
@@ -5,6 +6,7 @@ export interface LibraryBook {
   title: string
   author: string
   pdf_path: string
+  visibility: BookVisibility
   status: ReadingStatus
   last_page: number
   created_at: string
@@ -16,7 +18,7 @@ export interface LibraryFriend {
   status: 'pending' | 'accepted'
   direction: 'sent' | 'received'
 }
-export const bookFields = 'id,owner_id,title,author,pdf_path,created_at'
+export const bookFields = 'id,owner_id,title,author,pdf_path,created_at,visibility'
 export type BookWithProgress = Omit<LibraryBook, 'status' | 'last_page'> & {
   reading?: { status: ReadingStatus; last_page: number }[]
 }
