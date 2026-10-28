@@ -5,10 +5,12 @@ import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
 import LibraryFriends from './LibraryFriends.vue'
 import PdfReader from './PdfReader.vue'
+import PageComments from './PageComments.vue'
 import { pdfSizeLabel, uploadErrorMessage, type UploadStage } from '../upload-errors'
 import { bookFields, withReadingProgress, type BookVisibility, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
+const readerPageReady = ref(false)
 const books = ref<LibraryBook[]>([])
 const friends = ref<LibraryFriend[]>([])
 const ownerFilter = ref('mine')
@@ -114,6 +116,7 @@ function closeReader() {
   openRequest++
   if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value)
   pdfUrl.value = ''
+  readerPageReady.value = false
   activeBook.value = null
   opening.value = null
 }
@@ -370,11 +373,14 @@ function savePage(currentPage = page.value) {
     </div>
     <dialog v-if="!selectedFriend" id="upload-book" ref="uploadDialog" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description" @cancel.prevent="closeUpload" @close="onUploadClose" @click="uploadBackdrop" @keydown="uploadFocus">
     <form class="library-upload" @submit.prevent="uploadBook">
-      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div><p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
+      <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
+      <div class="upload-modal-body">
+      <p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
       <div class="upload-fields"><label>Título<input v-model="title" autofocus maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label><span class="upload-label-heading">Autor <small>(opcional)</small></span><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
       <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Apenas seus amigos aceitos. Exige login.</small></span></label></fieldset>
       <p v-if="error" class="library-error" role="alert">{{ error }}</p>
+      </div>
       <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
     </form>
     </dialog>
@@ -383,7 +389,8 @@ function savePage(currentPage = page.value) {
     <p v-if="notice" class="library-notice" role="status">{{ notice }}</p>
     <section v-if="activeBook && pdfUrl" class="library-reader" aria-label="Leitor de PDF">
       <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button class="library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
-      <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="activeBook.last_page" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" />
+      <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="activeBook.last_page" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" @ready="readerPageReady = $event" />
+      <PageComments :key="activeBook.id" :book-id="activeBook.id" :page="page" :book-title="activeBook.title" :disabled="!readerPageReady" />
     </section>
     <div class="library-toolbar" role="region" aria-label="Filtros da biblioteca">
       <label class="shelf-filter"><span class="filter-label">Estante</span><span class="shelf-select"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h6v16H4zM14 4h6v16h-6zM4 8h6M14 8h6" /></svg><select :value="ownerFilter" aria-label="Filtrar livros por dono" @change="changeShelf"><option value="mine">Minha estante</option><option value="all">Todas as estantes</option><option v-for="friend in friends" :key="friend.other_id" :value="friend.other_id">{{ friend.display_name }}</option></select><svg class="select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>
@@ -490,15 +497,18 @@ button:disabled { opacity: .55; cursor: wait; }
 .book-read { margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--green); color: var(--paper); font: 600 12px var(--font-sans); cursor: pointer; }
 .book-read { border-color: var(--green); }
 .book-read:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 90%, var(--ink)); }
-.upload-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 24px 90px #0004; }
+.upload-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 24px 90px #0004; }
+.upload-dialog[open] { display: flex; flex-direction: column; }
+.upload-modal-body { display: grid; gap: 20px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 30px; scrollbar-gutter: stable; }
+.upload-modal-body > p { margin: 0; }
 .upload-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
-.upload-modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.upload-modal-heading { flex-shrink: 0; padding: 22px 30px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .upload-close { flex-shrink: 0; width: 44px; padding: 0; border-radius: 50%; }
-.library-upload { display: grid; gap: 20px; min-width: 0; padding: 30px; margin: 0; }
+.library-upload { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; min-height: 0; max-height: inherit; padding: 0; margin: 0; overflow: hidden; }
 .library-upload > p { margin: 0; }
 .library-upload input[type='file'] { min-width: 0; font-size: 12px; }
 .library-upload input[type='file']::file-selector-button { max-width: 100%; margin-right: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--green); font: inherit; }
-@media (max-width: 640px) { .upload-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; } .upload-dialog .upload-fields { grid-template-columns: minmax(0, 1fr); } .upload-dialog input:not([type='file']) { font-size: 16px; } .upload-actions > button { flex: 1; } }
+@media (max-width: 640px) { .upload-modal-heading { padding: 16px 20px; } .upload-modal-body { padding: 16px 20px; } .upload-actions { padding: 12px 20px; } .upload-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; } .upload-dialog .upload-fields { grid-template-columns: minmax(0, 1fr); } .upload-dialog input:not([type='file']) { font-size: 16px; } .upload-actions > button { flex: 1; } }
 .library-upload h2 { margin: 8px 0; font-size: 24px; }
 .library-upload p:not(.eyebrow) { color: var(--muted); font-size: 13px; line-height: 1.7; }
 .library-upload label { display: grid; gap: 10px; color: var(--muted); font-size: 12px; }
@@ -506,7 +516,7 @@ button:disabled { opacity: .55; cursor: wait; }
 .library-upload input[type='file'] { padding: 18px; border-style: dashed; }
 .upload-label-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .upload-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.upload-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.upload-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 12px; padding: 16px 30px; border-top: 1px solid var(--line); }
 .library-error, .library-notice { border: 1px solid var(--line); border-radius: 5px; padding: 14px 18px; font-size: 13px; line-height: 1.7; background: var(--surface); }
 .library-error { color: var(--orange); }
 .library-error button { min-height: 44px; border: 0; color: var(--green); background: transparent; text-decoration: underline; cursor: pointer; }
@@ -539,6 +549,6 @@ button:disabled { opacity: .55; cursor: wait; }
 .gate-art b { position: absolute; right: 6px; bottom: -14px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--green); width: 45px; height: 45px; display: grid; place-items: center; font-size: 24px; }
 @media (max-width: 1000px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } .library-stats > p { padding-inline: 20px; } }
 @media (max-width: 760px) { .books-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .library-stats { grid-template-columns: repeat(3, 1fr); } .library-stats > p { display: none; } .library-stats > div:last-of-type { border: 0; } .library-intro { align-items: flex-start; flex-direction: column; padding-top: 32px; } .library-account { flex-wrap: wrap; } .library-search { width: 100%; } .library-search input { width: 100%; } .cover-title { font-size: 25px; } }
-@media (max-width: 480px) { .books-grid { grid-template-columns: 1fr; gap: 24px; } .book-card { display: flex; flex-direction: column; } .book-cover { aspect-ratio: auto; min-height: 230px; padding: 24px; gap: 12px; border-left-width: 6px; } .cover-title { font-size: clamp(22px, 6vw, 28px); line-height: 1.2; -webkit-line-clamp: 4; } .cover-format { font-size: 8px; } .cover-author { font-size: 11px; } .cover-mark { font-size: 28px; } .book-details { padding: 20px; } .book-details h2 { font-size: 19px; line-height: 1.4; } .book-owner { font-size: 12px; } .book-details > p { font-size: 13px; } .book-page { min-height: auto; margin-bottom: 18px; font-size: 12px; } .book-status-label { font-size: 13px; } .book-status-label select { font-size: 16px; } .book-control-title small { font-size: 11px; } .book-read { min-height: 48px; font-size: 14px; padding-inline: 14px; } .library-stats > div { padding: 16px 10px; } .library-stats div > span { font-size: 8px; } .library-stats strong { font-size: 30px; } .library-stats small { font-size: 10px; } .upload-fields { grid-template-columns: 1fr; } .library-upload { padding: 20px; } .reader-top { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 480px) { .books-grid { grid-template-columns: 1fr; gap: 24px; } .book-card { display: flex; flex-direction: column; } .book-cover { aspect-ratio: auto; min-height: 230px; padding: 24px; gap: 12px; border-left-width: 6px; } .cover-title { font-size: clamp(22px, 6vw, 28px); line-height: 1.2; -webkit-line-clamp: 4; } .cover-format { font-size: 8px; } .cover-author { font-size: 11px; } .cover-mark { font-size: 28px; } .book-details { padding: 20px; } .book-details h2 { font-size: 19px; line-height: 1.4; } .book-owner { font-size: 12px; } .book-details > p { font-size: 13px; } .book-page { min-height: auto; margin-bottom: 18px; font-size: 12px; } .book-status-label { font-size: 13px; } .book-status-label select { font-size: 16px; } .book-control-title small { font-size: 11px; } .book-read { min-height: 48px; font-size: 14px; padding-inline: 14px; } .library-stats > div { padding: 16px 10px; } .library-stats div > span { font-size: 8px; } .library-stats strong { font-size: 30px; } .library-stats small { font-size: 10px; } .upload-fields { grid-template-columns: 1fr; } .reader-top { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .book-card { transition: none; } }
 </style>

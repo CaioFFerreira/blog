@@ -5,7 +5,7 @@ import { withBase } from 'vitepress'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 
 const props = defineProps<{ url: string; initialPage: number; title: string; saving?: boolean }>()
-const emit = defineEmits<{ pageChange: [page: number]; save: [page: number] }>()
+const emit = defineEmits<{ pageChange: [page: number]; save: [page: number]; ready: [value: boolean] }>()
 const stage = ref<HTMLElement>()
 const canvas = ref<HTMLCanvasElement>()
 const loading = ref(true)
@@ -50,6 +50,7 @@ async function renderPage() {
   const previous = renderTask
   previous?.cancel()
   rendering.value = true
+  emit('ready', false)
   error.value = ''
   try {
     if (previous) await previous.promise.catch(() => {})
@@ -74,6 +75,7 @@ async function renderPage() {
     if (ticket !== renderVersion || disposed || document !== pdf) return
     pageInput.value = currentPage.value
     emit('pageChange', currentPage.value)
+    emit('ready', true)
     const text = await page.getTextContent()
     if (ticket === renderVersion && !disposed) {
       pageText.value = text.items.map(item => 'str' in item ? item.str : '').join(' ')
@@ -90,6 +92,7 @@ async function loadDocument() {
   release()
   const ticket = loadVersion
   loading.value = true
+  emit('ready', false)
   rendering.value = false
   error.value = ''
   totalPages.value = 0
