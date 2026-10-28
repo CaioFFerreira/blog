@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
@@ -13,6 +13,8 @@ import { bookFields, withReadingProgress, type BookVisibility, type BookWithProg
 
 const { user, ready, busy: authBusy, accountName, signIn } = useAuth()
 const readerPageReady = ref(false)
+const readerInitialPage = ref(1)
+const readerOpenComments = ref(false)
 const books = ref<LibraryBook[]>([])
 const friends = ref<LibraryFriend[]>([])
 const activeTab = ref<'books' | 'friends'>('books')
@@ -358,7 +360,7 @@ function changeStatus(book: LibraryBook, event: Event) {
   select.value = book.status
   void saveBook(book, { status: value })
 }
-async function openBook(book: LibraryBook) {
+async function openBook(book: LibraryBook, targetPage?: number, openComments = false) {
   const owner = uid.value
   if (!owner || requestMessage.value) return
   closeReader()
@@ -372,11 +374,14 @@ async function openBook(book: LibraryBook) {
     if (ticket !== generation || request !== openRequest || uid.value !== owner) return
     if (downloadError || !data) throw downloadError
     pdfUrl.value = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+    readerInitialPage.value = targetPage ?? book.last_page
+    readerOpenComments.value = openComments
     activeBook.value = book
-    page.value = book.last_page
+    page.value = readerInitialPage.value
     await nextTick()
     readerHeading.value?.focus({ preventScroll: true })
     readerHeading.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    opening.value = null
     if (book.status === 'want_read') void saveBook(book, { status: 'reading' })
   } catch {
     if (ticket === generation && request === openRequest) error.value = 'Não foi possível abrir este PDF. Tente novamente.'
@@ -392,6 +397,53 @@ function savePage(currentPage = page.value) {
   }
   void saveBook(activeBook.value, { last_page: page.value })
 }
+const pendingNotification = ref<{ bookId: string; page: number } | null>(null)
+function queueNotification(detail: unknown) {
+  if (!detail || typeof detail !== 'object') return
+  const target = detail as { bookId?: unknown; page?: unknown }
+  if (typeof target.bookId !== 'string' || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(target.bookId)
+    || typeof target.page !== 'number' || !Number.isInteger(target.page) || target.page < 1 || target.page > 100000) return
+  pendingNotification.value = { bookId: target.bookId, page: target.page }
+  const destination = new URL(window.location.href)
+  destination.searchParams.set('book', target.bookId)
+  destination.searchParams.set('page', String(target.page))
+  destination.searchParams.set('comments', '1')
+  window.history.replaceState(window.history.state, '', destination.href)
+}
+function onNotification(event: Event) { queueNotification((event as CustomEvent).detail) }
+watch([pendingNotification, uid, requestMessage], async () => {
+  const target = pendingNotification.value, owner = uid.value
+  if (!target || !owner || requestMessage.value) return
+  if (ownerFilter.value !== 'mine') {
+    visitShelf(null)
+    return
+  }
+  pendingNotification.value = null
+  activeTab.value = 'books'
+  const ticket = generation
+  opening.value = target.bookId
+  error.value = ''
+  try {
+    const client = await getSupabase(withBase('/'))
+    const { data, error: failure } = await client.from('library_books')
+      .select(`${bookFields},reading:library_reading_progress(status,last_page)`)
+      .eq('id', target.bookId).eq('owner_id', owner).single()
+    if (ticket !== generation || uid.value !== owner) return
+    if (failure || !data) throw failure ?? new Error('Book unavailable')
+    opening.value = null
+    await openBook(withReadingProgress(data as unknown as BookWithProgress), target.page, true)
+  } catch {
+    if (ticket === generation && uid.value === owner) error.value = 'Não foi possível abrir o livro desta notificação. Ele pode ter sido excluído. Atualize sua biblioteca e tente novamente.'
+  } finally {
+    if (ticket === generation) opening.value = null
+  }
+})
+onMounted(() => {
+  window.addEventListener('library:open-notification', onNotification)
+  const parameters = new URL(window.location.href).searchParams
+  if (parameters.get('comments') === '1') queueNotification({ bookId: parameters.get('book'), page: Number(parameters.get('page')) })
+})
+onUnmounted(() => window.removeEventListener('library:open-notification', onNotification))
 </script>
 
 <template>
@@ -451,8 +503,8 @@ function savePage(currentPage = page.value) {
     <ToastNotice v-model="notice" />
     <section v-if="activeBook && pdfUrl" class="library-reader" aria-label="Leitor de PDF">
       <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button class="library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
-      <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="activeBook.last_page" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" @ready="readerPageReady = $event" />
-      <PageComments :key="activeBook.id" :book-id="activeBook.id" :page="page" :book-title="activeBook.title" :disabled="!readerPageReady" />
+      <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="readerInitialPage" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" @ready="readerPageReady = $event" />
+      <PageComments :key="pdfUrl" :book-id="activeBook.id" :page="page" :book-title="activeBook.title" :disabled="!readerPageReady" :auto-open="readerOpenComments" />
     </section>
     <div class="library-toolbar" role="region" aria-label="Filtros da biblioteca">
       <label class="shelf-filter"><span class="filter-label">Estante</span><span class="shelf-select"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h6v16H4zM14 4h6v16h-6zM4 8h6M14 8h6" /></svg><select :value="ownerFilter" aria-label="Filtrar livros por dono" @change="changeShelf"><option value="mine">Minha estante</option><option value="all">Todas as estantes</option><option v-for="friend in friends" :key="friend.other_id" :value="friend.other_id">{{ friend.display_name }}</option></select><svg class="select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>

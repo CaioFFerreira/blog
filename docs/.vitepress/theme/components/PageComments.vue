@@ -15,7 +15,7 @@ interface PageComment {
   updated_at: string
   display_name: string
 }
-const props = defineProps<{ bookId: string; page: number; bookTitle: string; disabled?: boolean }>()
+const props = defineProps<{ bookId: string; page: number; bookTitle: string; disabled?: boolean; autoOpen?: boolean }>()
 const { user } = useAuth()
 const dialog = ref<HTMLDialogElement>()
 const trigger = ref<HTMLButtonElement>()
@@ -93,7 +93,7 @@ function onClose() {
   if (trigger.value?.isConnected) trigger.value.focus({ preventScroll: true })
 }
 async function open() {
-  if (!user.value || props.disabled) return
+  if (!user.value || props.disabled || expanded.value) return
   expanded.value = true
   await nextTick()
   if (!dialog.value || disposed || !user.value) return
@@ -103,6 +103,13 @@ async function open() {
   locked = true
   void load()
 }
+let autoOpened = false
+watch([() => props.autoOpen, () => props.disabled, () => user.value?.id], () => {
+  if (props.autoOpen && !props.disabled && user.value && !autoOpened) {
+    autoOpened = true
+    void open()
+  }
+}, { immediate: true })
 function backdrop(event: MouseEvent) {
   if (event.target !== dialog.value) return
   const box = dialog.value.getBoundingClientRect()

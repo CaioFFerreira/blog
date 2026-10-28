@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { useData, withBase } from 'vitepress'
+import { withBase } from 'vitepress'
 import { onMounted, onUnmounted, ref } from 'vue'
 import FocusAudio from './FocusAudio.vue'
 import GoogleLogin from './GoogleLogin.vue'
 
-const { isDark } = useData()
 const menuOpen = ref(false)
 const header = ref<HTMLElement | null>(null)
 const menuButton = ref<HTMLButtonElement | null>(null)
@@ -42,9 +41,6 @@ onUnmounted(() => document.removeEventListener('pointerdown', closeOnOutsideClic
       <a :href="withBase('/livros.html')" @click="menuOpen = false">Livros</a>
       <FocusAudio />
       <GoogleLogin />
-      <button class="theme-toggle" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark">
-        {{ isDark ? '☀' : '☾' }}
-      </button>
     </nav>
   </header>
 </template>
