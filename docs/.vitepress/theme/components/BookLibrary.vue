@@ -13,6 +13,22 @@ const { user, ready, busy: authBusy, accountName, errorMessage: authError, signI
 const readerPageReady = ref(false)
 const books = ref<LibraryBook[]>([])
 const friends = ref<LibraryFriend[]>([])
+const activeTab = ref<'books' | 'friends'>('books')
+const libraryTabs = [{ value: 'books', label: 'Livros' }, { value: 'friends', label: 'Amigos' }] as const
+function selectTab(tab: 'books' | 'friends') {
+  if (tab === 'friends') {
+    closeUpload()
+    closeReader()
+  }
+  activeTab.value = tab
+}
+function navigateTabs(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  event.preventDefault()
+  const tab = event.key === 'Home' ? 'books' : event.key === 'End' ? 'friends' : activeTab.value === 'books' ? 'friends' : 'books'
+  selectTab(tab)
+  nextTick(() => document.getElementById(`library-tab-${tab}`)?.focus())
+}
 const ownerFilter = ref('mine')
 const selectedFriend = computed(() => friends.value.find(friend => friend.other_id === ownerFilter.value) ?? null)
 const loading = ref(false)
@@ -163,6 +179,7 @@ async function loadBooks() {
   }
 }
 watch(uid, () => {
+  activeTab.value = 'books'
   ownerFilter.value = 'mine'
   friends.value = []
   resetPrivateState()
@@ -173,6 +190,7 @@ onUnmounted(resetPrivateState)
 
 function visitShelf(friend: LibraryFriend | null) {
   if (friend?.status !== 'accepted' && friend !== null) return
+  activeTab.value = 'books'
   resetPrivateState()
   ownerFilter.value = friend?.other_id ?? 'mine'
   void loadBooks()
@@ -359,11 +377,17 @@ function savePage(currentPage = page.value) {
     <div class="library-account">
       <span><i aria-hidden="true"></i>BIBLIOTECA PRIVADA</span>
     </div>
+    <div class="library-tabs" role="tablist" aria-label="Biblioteca" @keydown="navigateTabs">
+      <button v-for="tab in libraryTabs" :id="`library-tab-${tab.value}`" :key="tab.value" type="button" role="tab" :aria-selected="activeTab === tab.value" :aria-controls="`library-panel-${tab.value}`" :tabindex="activeTab === tab.value ? 0 : -1" @click="selectTab(tab.value)">{{ tab.label }}</button>
+    </div>
+    <section v-show="activeTab === 'friends'" id="library-panel-friends" class="library-friends-panel" role="tabpanel" aria-labelledby="library-tab-friends" tabindex="0">
+      <LibraryFriends @visit="visitShelf" @refreshed="refreshFriends" />
+    </section>
+    <section v-show="activeTab === 'books'" id="library-panel-books" role="tabpanel" aria-labelledby="library-tab-books" tabindex="0">
     <header class="library-intro">
       <div><p class="eyebrow">{{ selectedFriend ? 'UMA ESTANTE AMIGA' : 'SEU PRÓXIMO CAPÍTULO' }}</p><h1 v-if="selectedFriend">Estante de <em>{{ selectedFriend.display_name }}.</em></h1><h1 v-else-if="ownerFilter === 'all'">Todas as estantes, <em>boas leituras.</em></h1><h1 v-else>Sua estante, <em>seu ritmo.</em></h1><p>{{ selectedFriend ? 'Explore os livros do seu amigo. As páginas salvas e os status abaixo são seus, sem alterar a leitura dele.' : `Olá, ${firstName}. Que tal reservar um tempo para uma boa leitura?` }}</p></div>
       <button v-if="!selectedFriend" class="library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span aria-hidden="true">+</span> Adicionar livro</button>
     </header>
-    <LibraryFriends @visit="visitShelf" @refreshed="refreshFriends" />
     <div v-if="selectedFriend" class="shared-shelf-note"><span>Compartilhada por {{ selectedFriend.display_name }} · Seu progresso é individual.</span><button class="library-secondary" type="button" @click="visitShelf(null)">← Minha estante</button></div>
     <div class="library-stats" aria-label="Resumo da biblioteca">
       <div><span>NA ESTANTE</span><strong>{{ counts.all.toString().padStart(2, '0') }}</strong><small>livros para explorar</small></div>
@@ -414,10 +438,17 @@ function savePage(currentPage = page.value) {
     </div>
     <button v-if="visibleCount < filtered.length" class="library-secondary load-more" type="button" @click="visibleCount += 12">Mostrar mais livros</button>
     <footer class="library-footer"><span>SEU ESPAÇO PARA LER E DESCOBRIR.</span><span>{{ filtered.length }} {{ filtered.length === 1 ? 'livro' : 'livros' }} na seleção</span></footer>
+    </section>
   </section>
 </template>
 
 <style scoped>
+.library-tabs { display: flex; gap: 6px; margin-top: 24px; padding: 5px; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.library-tabs button { min-height: 44px; min-width: 120px; padding: 10px 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.library-tabs button[aria-selected="true"] { background: var(--green); color: var(--paper); }
+.library-tabs button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.library-friends-panel { padding-top: 32px; }
+@media (max-width: 480px) { .library-tabs { width: 100%; box-sizing: border-box; } .library-tabs button { flex: 1; min-width: 0; } }
 .upload-privacy { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
 .upload-privacy legend { padding-inline: 6px; color: var(--muted); font-size: 12px; }
 .library-upload .upload-privacy label { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
