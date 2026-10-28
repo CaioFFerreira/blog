@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
+import CommentActions from './CommentActions.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
@@ -15,6 +16,7 @@ interface PageComment {
   updated_at: string
   display_name: string
 }
+interface CommentReaction { comment_id: string; likes: number; dislikes: number; my_reaction: -1 | 0 | 1 }
 const props = defineProps<{ bookId: string; page: number; bookTitle: string; disabled?: boolean; autoOpen?: boolean }>()
 const { user } = useAuth()
 const dialog = ref<HTMLDialogElement>()
@@ -23,6 +25,8 @@ const comments = ref<PageComment[]>([])
 const expanded = ref(false)
 const loading = ref(false)
 const mutating = ref(false)
+const reacting = ref<string | null>(null)
+const reactions = ref<Record<string, CommentReaction>>({})
 const access = ref(false)
 const more = ref(false)
 const nextOffset = ref(0)
@@ -131,7 +135,7 @@ async function refreshComments() {
   await load()
 }
 async function load(append = false) {
-  if (!user.value || mutating.value || loading.value) return
+  if (!user.value || mutating.value || reacting.value || loading.value) return
   const owner = user.value.id
   const ticket = ++version
   const offset = append ? nextOffset.value : 0
@@ -139,7 +143,7 @@ async function load(append = false) {
   loading.value = true
   error.value = ''
   // Clear stale content while checking the book's current access permissions.
-  if (!append) { comments.value = []; access.value = false; more.value = false; loaded.value = false }
+  if (!append) { comments.value = []; reactions.value = {}; access.value = false; more.value = false; loaded.value = false }
   try {
     const client = await getSupabase(withBase('/'))
     if (ticket !== version || disposed || user.value?.id !== owner) return
@@ -149,6 +153,16 @@ async function load(append = false) {
     if (ticket !== version || disposed || user.value?.id !== owner) return
     if (queryError) throw queryError
     const rows = (data ?? []) as PageComment[]
+    const batch = rows.slice(0, 50)
+    const batchReactions: Record<string, CommentReaction> = {}
+    if (batch.length) {
+      const totals = await client.rpc('library_comment_reaction_totals', { target_comments: batch.map(comment => comment.id) })
+      if (ticket !== version || disposed || user.value?.id !== owner) return
+      if (totals.error?.code === '42501') throw totals.error
+      if (totals.error) error.value = 'Não foi possível carregar as reações. Atualize os comentários e confira se a migração 008 foi aplicada.'
+      else for (const row of (totals.data ?? []) as CommentReaction[]) batchReactions[row.comment_id] = row
+    }
+    reactions.value = append ? { ...reactions.value, ...batchReactions } : batchReactions
     comments.value = append
       ? Array.from(new Map([...comments.value, ...rows.slice(0, 50)].map(comment => [comment.id, comment])).values())
       : rows.slice(0, 50)
@@ -160,6 +174,7 @@ async function load(append = false) {
   } catch (failure) {
     if (ticket === version && !disposed) {
       comments.value = []
+      reactions.value = {}
       access.value = false
       more.value = false
       loaded.value = false
@@ -172,7 +187,7 @@ async function load(append = false) {
 }
 async function mutate(operation: 'add' | 'edit' | 'delete', comment?: PageComment) {
   const author = user.value?.id
-  if (!author || !access.value || loading.value || mutating.value) return
+  if (!author || !access.value || loading.value || mutating.value || reacting.value) return
   if (operation !== 'add' && comment?.author_id !== author) return
   const body = (operation === 'edit' ? editDraft.value : draft.value).trim()
   if (operation !== 'delete' && (!body || body.length > 4000)) {
@@ -214,11 +229,38 @@ async function mutate(operation: 'add' | 'edit' | 'delete', comment?: PageCommen
   } catch (failure) {
     if (ticket === version && !disposed) {
       error.value = failMessage(failure)
-      if ((failure as { code?: string })?.code === '42501') { comments.value = []; access.value = false; loaded.value = false; more.value = false; editing.value = null }
+      if ((failure as { code?: string })?.code === '42501') { comments.value = []; reactions.value = {}; access.value = false; loaded.value = false; more.value = false; editing.value = null }
     }
   } finally {
     if (ticket === version && !disposed) mutating.value = false
   }
+}
+async function react(comment: PageComment, choice: -1 | 1) {
+  const owner = user.value?.id, previous = reactions.value[comment.id]
+  if (!owner || !access.value || !previous || loading.value || mutating.value || reacting.value) return
+  const ticket = version
+  const selected = previous.my_reaction === choice ? 0 : choice
+  reacting.value = comment.id
+  error.value = ''
+  notice.value = ''
+  try {
+    const client = await getSupabase(withBase('/'))
+    if (ticket !== version || disposed || user.value?.id !== owner) return
+    const { data, error: failure } = await client.rpc('library_set_comment_reaction', { target_comment: comment.id, target_reaction: selected })
+    if (ticket !== version || disposed || user.value?.id !== owner) return
+    if (failure) throw failure
+    const result = (data as CommentReaction[] | null)?.[0]
+    if (!result || result.comment_id !== comment.id) throw new Error('Reaction unavailable')
+    reactions.value = { ...reactions.value, [comment.id]: result }
+    notice.value = selected === 0 ? 'Reação removida.' : 'Reação atualizada.'
+  } catch (failure) {
+    if (ticket === version && !disposed) {
+      error.value = (failure as { code?: string })?.code === '42501' ? failMessage(failure) : 'Não foi possível salvar sua reação. Tente novamente.'
+      if ((failure as { code?: string })?.code === '42501') {
+        comments.value = []; reactions.value = {}; access.value = false; loaded.value = false; more.value = false; editing.value = null
+      }
+    }
+  } finally { if (ticket === version && !disposed) reacting.value = null }
 }
 async function startEdit(comment: PageComment) {
   editing.value = comment.id
@@ -229,9 +271,11 @@ async function startEdit(comment: PageComment) {
 watch([() => props.bookId, () => props.page, () => user.value?.id], () => {
   version++
   comments.value = []
+  reactions.value = {}
   loaded.value = false
   loading.value = false
   mutating.value = false
+  reacting.value = null
   access.value = false
   more.value = false
   nextOffset.value = 0
@@ -244,7 +288,7 @@ watch([() => props.bookId, () => props.page, () => user.value?.id], () => {
   else if (expanded.value) void load()
 })
 function onFocus() {
-  if (expanded.value && user.value && !mutating.value && !loading.value) void refreshComments()
+  if (expanded.value && user.value && !mutating.value && !reacting.value && !loading.value) void refreshComments()
   else if (!counting.value && user.value) scheduleCount()
 }
 onMounted(() => window.addEventListener('focus', onFocus))
@@ -253,21 +297,24 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
 
 <template>
   <div class="page-comments">
-    <RequestLoading :message="mutating ? 'Salvando comentário…' : loading ? 'Carregando comentários…' : ''" />
+    <RequestLoading :message="reacting ? 'Salvando reação…' : mutating ? 'Salvando comentário…' : loading ? 'Carregando comentários…' : ''" />
     <button data-action="open" ref="trigger" class="ui-action comments-trigger" type="button" :disabled="disabled" aria-haspopup="dialog" aria-controls="page-comments-dialog" @click="open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z" /></svg>Comentários · página {{ page }}{{ countLabel }}</button>
     <dialog id="page-comments-dialog" ref="dialog" class="comments-dialog" aria-labelledby="comments-title" aria-describedby="comments-description" @cancel.prevent="close" @close="onClose" @click="backdrop" @keydown="trapFocus">
       <header class="comments-heading"><div><p class="eyebrow">LEITURA EM CONVERSA</p><h2 id="comments-title">Comentários da página {{ page }}</h2></div><button data-action="ghost" class="ui-action comments-close" type="button" aria-label="Fechar comentários" @click="close">×</button></header>
       <div class="comments-scroll-body">
       <p id="comments-description" class="comments-description">{{ bookTitle }} · Quem tem acesso ao livro pode ler e comentar.</p>
-      <div class="comments-tools"><span>{{ loaded ? `${comments.length}${more ? '+' : ''} comentários` : 'Comentários desta página' }}</span><button data-action="ghost" class="ui-action" type="button" :disabled="loading || mutating" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button></div>
+      <div class="comments-tools"><span>{{ loaded ? `${comments.length}${more ? '+' : ''} comentários` : 'Comentários desta página' }}</span><button data-action="ghost" class="ui-action" type="button" :disabled="loading || mutating || !!reacting" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button></div>
       <p v-if="loading" class="comments-message" role="status">Carregando comentários…</p>
       <ToastNotice :model-value="error" kind="error" />
-      <button data-action="ghost" class="ui-action" v-if="error" type="button" :disabled="loading || mutating" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Tentar novamente</button>
+      <button data-action="ghost" class="ui-action" v-if="error" type="button" :disabled="loading || mutating || !!reacting" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Tentar novamente</button>
       <ToastNotice v-model="notice" />
-      <form v-if="access" class="comment-compose" @submit.prevent="mutate('add')"><label>Seu comentário<textarea v-model="draft" rows="3" maxlength="4000" :disabled="mutating || loading" placeholder="O que você achou desta página?" required></textarea></label><div><small>{{ draft.length }}/4000</small><button data-action="primary" class="ui-action comment-primary" type="submit" :disabled="mutating || loading || !draft.trim()">{{ mutating ? 'Salvando…' : 'Publicar comentário' }}</button></div></form>
+      <form v-if="access" class="comment-compose" @submit.prevent="mutate('add')"><label>Seu comentário<textarea v-model="draft" rows="3" maxlength="4000" :disabled="mutating || loading || !!reacting" placeholder="O que você achou desta página?" required></textarea></label><div><small>{{ draft.length }}/4000</small><button data-action="primary" class="ui-action comment-primary" type="submit" :disabled="mutating || loading || !!reacting || !draft.trim()">{{ mutating ? 'Salvando…' : 'Publicar comentário' }}</button></div></form>
       <p v-if="loaded && !loading && !comments.length" class="comments-empty">Ainda não há comentários nesta página. Comece a conversa.</p>
-      <div v-if="comments.length" class="comments-list" tabindex="0" role="region" aria-label="Comentários desta página"><article v-for="comment in comments" :key="comment.id" class="comment-item"><header><span class="comment-avatar" aria-hidden="true">{{ comment.display_name.slice(0, 1).toUpperCase() }}</span><div><strong>{{ comment.display_name }}{{ comment.author_id === user?.id ? ' (você)' : '' }}</strong><span><time :datetime="comment.created_at">{{ formatDate(comment.created_at) }}</time>{{ comment.updated_at !== comment.created_at ? ' · editado' : '' }}</span></div></header><form v-if="editing === comment.id" class="comment-edit" @submit.prevent="mutate('edit', comment)"><label>Editar comentário<textarea :id="`comment-editor-${comment.id}`" v-model="editDraft" rows="3" maxlength="4000" :disabled="mutating" required></textarea></label><div><button data-action="ghost" class="ui-action" type="button" :disabled="mutating" @click="editing = null">Cancelar</button><button data-action="primary" class="ui-action comment-primary" type="submit" :disabled="mutating || !editDraft.trim()">Salvar alteração</button></div></form><p v-else class="comment-body">{{ comment.body }}</p><div v-if="comment.author_id === user?.id && editing !== comment.id" class="comment-actions"><button data-action="open" class="ui-action" type="button" :disabled="mutating || loading" :aria-label="`Editar comentário de ${comment.display_name}`" @click="startEdit(comment)">Editar</button><button data-action="danger" class="ui-action comment-delete" type="button" :disabled="mutating || loading" :aria-label="`Excluir comentário de ${comment.display_name}`" @click="mutate('delete', comment)">Excluir</button></div></article></div>
-      <button data-action="ghost" v-if="more" class="ui-action comments-more" type="button" :disabled="loading || mutating" @click="load(true)">Mostrar mais comentários</button>
+      <div v-if="comments.length" class="comments-list" tabindex="0" role="region" aria-label="Comentários desta página"><article v-for="comment in comments" :key="comment.id" class="comment-item"><header><span class="comment-avatar" aria-hidden="true">{{ comment.display_name.slice(0, 1).toUpperCase() }}</span><div class="comment-author"><strong>{{ comment.display_name }}{{ comment.author_id === user?.id ? ' (você)' : '' }}</strong><span><time :datetime="comment.created_at">{{ formatDate(comment.created_at) }}</time>{{ comment.updated_at !== comment.created_at ? ' · editado' : '' }}</span></div><CommentActions v-if="comment.author_id === user?.id && editing !== comment.id" :comment-id="comment.id" :author-name="comment.display_name" :disabled="mutating || loading || !!reacting" @edit="startEdit(comment)" @delete="mutate('delete', comment)" /></header><form v-if="editing === comment.id" class="comment-edit" @submit.prevent="mutate('edit', comment)"><label>Editar comentário<textarea :id="`comment-editor-${comment.id}`" v-model="editDraft" rows="3" maxlength="4000" :disabled="mutating || !!reacting" required></textarea></label><div><button data-action="ghost" class="ui-action" type="button" :disabled="mutating || !!reacting" @click="editing = null">Cancelar</button><button data-action="primary" class="ui-action comment-primary" type="submit" :disabled="mutating || !!reacting || !editDraft.trim()">Salvar alteração</button></div></form><p v-else class="comment-body">{{ comment.body }}</p><div class="comment-reactions" role="group" :aria-label="`Reações ao comentário de ${comment.display_name}`">
+          <button data-action="ghost" class="ui-action reaction-button" :class="{ selected: reactions[comment.id]?.my_reaction === 1 }" type="button" :disabled="loading || mutating || !!reacting || !reactions[comment.id]" :aria-pressed="reactions[comment.id]?.my_reaction === 1" :aria-label="`Curtir comentário de ${comment.display_name}`" @click="react(comment, 1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-7c2 0 3 1 2 4l-1 3h6c2 0 2 2 2 3l-2 7c0 1-1 1-2 1H7" /></svg><span>Curtir</span><span class="reaction-count">{{ reactions[comment.id]?.likes ?? '—' }}</span></button>
+          <button data-action="ghost" class="ui-action reaction-button" :class="{ selected: reactions[comment.id]?.my_reaction === -1 }" type="button" :disabled="loading || mutating || !!reacting || !reactions[comment.id]" :aria-pressed="reactions[comment.id]?.my_reaction === -1" :aria-label="`Não curtir comentário de ${comment.display_name}`" @click="react(comment, -1)"><svg class="dislike-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 10v11H3V10h4Zm0 0 5-7c2 0 3 1 2 4l-1 3h6c2 0 2 2 2 3l-2 7c0 1-1 1-2 1H7" /></svg><span>Não curtir</span><span class="reaction-count">{{ reactions[comment.id]?.dislikes ?? '—' }}</span></button>
+        </div></article></div>
+      <button data-action="ghost" v-if="more" class="ui-action comments-more" type="button" :disabled="loading || mutating || !!reacting" @click="load(true)">Mostrar mais comentários</button>
       </div>
       <footer class="comments-footer"><span>Se o livro ficar privado, os amigos perdem acesso a esta conversa.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
     </dialog>
@@ -303,14 +350,18 @@ textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; mi
 .comment-item { padding: 18px 0; border-top: 1px solid var(--line); }
 .comment-item > header { display: flex; align-items: center; gap: 10px; }
 .comment-avatar { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--paper); font-size: 12px; }
-.comment-item > header > div { display: grid; gap: 5px; min-width: 0; }
+.comment-author { display: grid; gap: 5px; min-width: 0; flex: 1; }
 .comment-item strong { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
-.comment-item header div > span { color: var(--muted); font-size: 10px; line-height: 1.6; }
+.comment-author > span { color: var(--muted); font-size: 10px; line-height: 1.6; }
 .comment-body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.8; }
-.comment-actions { display: flex; gap: 8px; }
-.comment-actions button { min-height: 36px; padding: 6px 8px; font-size: 11px; background: transparent; }
-.comment-delete { color: var(--orange); }
+.comment-reactions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.comment-reactions .reaction-button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px; font-size: 12px; }
+.comment-reactions .reaction-button.selected { background: color-mix(in srgb, var(--green) 10%, transparent); border-color: color-mix(in srgb, var(--green) 35%, transparent); color: var(--green); font-weight: 600; }
+.comment-reactions .reaction-button.selected:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 14%, transparent); border-color: var(--green); color: var(--green); }
+.reaction-button svg { flex-shrink: 0; }
+.dislike-icon { transform: rotate(180deg); }
+.reaction-count { min-width: 12px; font-variant-numeric: tabular-nums; }
 .comments-more { display: block; margin: 18px auto; }
 .comments-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; margin: 0; border-top: 1px solid var(--line); }
-@media (max-width: 480px) { .page-comments { padding-inline: 20px; } .comments-trigger { width: 100%; } .comments-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); } .comments-heading { padding: 16px 20px; } .comments-scroll-body { padding: 0 20px 16px; } .comments-footer { padding: 12px 20px; } textarea { font-size: 16px; } .comment-actions button { min-height: 44px; } .comments-footer { align-items: flex-start; flex-direction: column; } .comments-footer > button { width: 100%; } }
+@media (max-width: 480px) { .page-comments { padding-inline: 20px; } .comments-trigger { width: 100%; } .comments-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); } .comments-heading { padding: 16px 20px; } .comments-scroll-body { padding: 0 20px 16px; } .comments-footer { padding: 12px 20px; } textarea { font-size: 16px; } .comments-footer { align-items: flex-start; flex-direction: column; } .comments-footer > button { width: 100%; } }
 </style>

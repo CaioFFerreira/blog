@@ -12,6 +12,9 @@ const trigger = ref<HTMLButtonElement>()
 const dropdown = ref<HTMLElement>()
 const expanded = ref(false)
 const mounted = ref(false)
+const mobile = ref(false)
+let mobileQuery: MediaQueryList | undefined
+function updateMobile() { mobile.value = mobileQuery?.matches ?? false }
 const position = ref({ top: '0px', left: '0px' })
 function closeMenu() { dropdown.value?.hidePopover(); expanded.value = false }
 async function openMenu(focusFirst = false) {
@@ -35,10 +38,14 @@ function logout() { closeMenu(); void signOut() }
 watch(() => user.value?.id, closeMenu)
 onMounted(() => {
   mounted.value = true
+  mobileQuery = window.matchMedia('(max-width: 900px)')
+  updateMobile()
+  mobileQuery.addEventListener('change', updateMobile)
   window.addEventListener('resize', closeMenu)
   document.addEventListener('scroll', closeMenu, true)
 })
 onUnmounted(() => {
+  mobileQuery?.removeEventListener('change', updateMobile)
   closeMenu()
   window.removeEventListener('resize', closeMenu)
   document.removeEventListener('scroll', closeMenu, true)
@@ -53,7 +60,7 @@ onUnmounted(() => {
         <span class="account-name" :title="accountName">{{ accountName }}</span>
         <svg class="account-chevron" :class="{ expanded }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <LibraryNotifications />
+      <Teleport to="#mobile-header-notifications" :disabled="!mobile"><LibraryNotifications /></Teleport>
     </template>
     <template v-else>
       <button data-action="primary" class="ui-action" type="button" :disabled="!ready || busy" @click="signIn(frontmatter.layout === 'library' ? '/livros.html' : '/')">{{ !ready ? 'Carregando conta…' : busy ? 'Entrando…' : 'Entrar com Google' }}</button>
