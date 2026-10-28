@@ -9,6 +9,21 @@ export interface LibraryBook {
   last_page: number
   created_at: string
 }
+export interface LibraryFriend {
+  friendship_id: string
+  other_id: string
+  display_name: string
+  status: 'pending' | 'accepted'
+  direction: 'sent' | 'received'
+}
+export const bookFields = 'id,owner_id,title,author,pdf_path,created_at'
+export type BookWithProgress = Omit<LibraryBook, 'status' | 'last_page'> & {
+  reading?: { status: ReadingStatus; last_page: number }[]
+}
+export function withReadingProgress(book: BookWithProgress): LibraryBook {
+  const { reading, ...metadata } = book
+  return { ...metadata, status: reading?.[0]?.status ?? 'want_read', last_page: reading?.[0]?.last_page ?? 1 }
+}
 export const statusLabels: Record<ReadingStatus, string> = {
   want_read: 'Quero ler', reading: 'Lendo', read: 'Lido',
 }

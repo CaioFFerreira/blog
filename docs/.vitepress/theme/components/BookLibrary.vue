@@ -3,10 +3,12 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
-import { normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
+import LibraryFriends from './LibraryFriends.vue'
+import { bookFields, withReadingProgress, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
 const books = ref<LibraryBook[]>([])
+const selectedFriend = ref<LibraryFriend | null>(null)
 const loading = ref(false)
 const error = ref('')
 const notice = ref('')
@@ -27,6 +29,7 @@ const readerHeading = ref<HTMLElement>()
 let generation = 0
 let openRequest = 0
 const uid = computed(() => user.value?.id)
+const shelfOwner = computed(() => selectedFriend.value?.other_id ?? uid.value)
 const firstName = computed(() => accountName.value.split(' ')[0])
 const filters: { value: ReadingStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' }, { value: 'want_read', label: 'Quero ler' },
@@ -74,18 +77,21 @@ function resetPrivateState() {
 }
 async function loadBooks() {
   const owner = uid.value
-  if (!owner) return
+  const shelf = shelfOwner.value
+  if (!owner || !shelf) return
+  closeReader()
+  books.value = []
   const ticket = ++generation
   loading.value = true
   error.value = ''
   try {
     const client = await getSupabase(withBase('/'))
     const { data, error: queryError } = await client.from('library_books')
-      .select('id,owner_id,title,author,pdf_path,status,last_page,created_at')
-      .eq('owner_id', owner).order('created_at', { ascending: false }).limit(1000)
+      .select(`${bookFields},reading:library_reading_progress(status,last_page)`)
+      .eq('owner_id', shelf).order('created_at', { ascending: false }).limit(1000)
     if (ticket !== generation || uid.value !== owner) return
     if (queryError) throw queryError
-    books.value = (data ?? []) as LibraryBook[]
+    books.value = ((data ?? []) as unknown as BookWithProgress[]).map(withReadingProgress)
   } catch {
     if (ticket === generation) error.value = 'Não foi possível carregar seus livros. Tente novamente em instantes.'
   } finally {
@@ -93,11 +99,25 @@ async function loadBooks() {
   }
 }
 watch(uid, () => {
+  selectedFriend.value = null
   resetPrivateState()
   loading.value = false
   if (uid.value) void loadBooks()
 }, { immediate: true, flush: 'sync' })
 onUnmounted(resetPrivateState)
+
+function visitShelf(friend: LibraryFriend | null) {
+  if (friend?.status !== 'accepted' && friend !== null) return
+  resetPrivateState()
+  selectedFriend.value = friend
+  void loadBooks()
+}
+function refreshFriends(friends: LibraryFriend[]) {
+  if (selectedFriend.value && !friends.some(friend => friend.status === 'accepted' && friend.other_id === selectedFriend.value?.other_id)) {
+    visitShelf(null)
+  }
+}
+
 
 function chooseFile(event: Event) {
   const input = event.target as HTMLInputElement
@@ -107,7 +127,7 @@ function chooseFile(event: Event) {
 async function uploadBook() {
   const owner = uid.value
   const selected = file.value
-  if (!owner || !selected || uploading.value) return
+  if (!owner || !selected || uploading.value || selectedFriend.value) return
   const ticket = generation
   uploading.value = true
   error.value = ''
@@ -126,13 +146,13 @@ async function uploadBook() {
     if (ticket !== generation || uid.value !== owner) return
     const { data, error: insertError } = await client.from('library_books').insert({
       owner_id: owner, title: title.value.trim(), author: author.value.trim(), pdf_path: path,
-    }).select().single()
+    }).select(bookFields).single()
     if (insertError) {
       await client.storage.from(pdfBucket).remove([path])
       throw insertError
     }
     if (ticket !== generation || uid.value !== owner) return
-    books.value.unshift(data as LibraryBook)
+    books.value.unshift(withReadingProgress(data as BookWithProgress))
     title.value = ''
     author.value = ''
     file.value = null
@@ -153,8 +173,10 @@ async function saveBook(book: LibraryBook, changes: { status?: ReadingStatus; la
   error.value = ''
   try {
     const client = await getSupabase(withBase('/'))
-    const { data, error: updateError } = await client.from('library_books').update(changes)
-      .eq('id', book.id).eq('owner_id', owner).select().single()
+    const { data, error: updateError } = await client.from('library_reading_progress').upsert({
+      user_id: owner, book_id: book.id,
+      status: changes.status ?? book.status, last_page: changes.last_page ?? book.last_page,
+    }, { onConflict: 'user_id,book_id' }).select('status,last_page').single()
     if (ticket !== generation || uid.value !== owner) return
     if (updateError) throw updateError
     Object.assign(book, data)
@@ -228,17 +250,19 @@ function savePage() {
       <span><i aria-hidden="true"></i>BIBLIOTECA PRIVADA</span>
     </div>
     <header class="library-intro">
-      <div><p class="eyebrow">SEU PRÓXIMO CAPÍTULO</p><h1>Sua estante, <em>seu ritmo.</em></h1><p>Olá, {{ firstName }}. Que tal reservar um tempo para uma boa leitura?</p></div>
-      <button class="library-primary" type="button" :aria-expanded="showUpload" aria-controls="upload-book" @click="showUpload = !showUpload"><span aria-hidden="true">+</span> Adicionar livro</button>
+      <div><p class="eyebrow">{{ selectedFriend ? 'UMA ESTANTE AMIGA' : 'SEU PRÓXIMO CAPÍTULO' }}</p><h1 v-if="selectedFriend">Estante de <em>{{ selectedFriend.display_name }}.</em></h1><h1 v-else>Sua estante, <em>seu ritmo.</em></h1><p>{{ selectedFriend ? 'Explore os livros do seu amigo. As páginas salvas e os status abaixo são seus, sem alterar a leitura dele.' : `Olá, ${firstName}. Que tal reservar um tempo para uma boa leitura?` }}</p></div>
+      <button v-if="!selectedFriend" class="library-primary" type="button" :aria-expanded="showUpload" aria-controls="upload-book" @click="showUpload = !showUpload"><span aria-hidden="true">+</span> Adicionar livro</button>
     </header>
+    <LibraryFriends @visit="visitShelf" @refreshed="refreshFriends" />
+    <div v-if="selectedFriend" class="shared-shelf-note"><span>Compartilhada por {{ selectedFriend.display_name }} · Seu progresso é individual.</span><button class="library-secondary" type="button" @click="visitShelf(null)">← Minha estante</button></div>
     <div class="library-stats" aria-label="Resumo da biblioteca">
       <div><span>NA ESTANTE</span><strong>{{ counts.all.toString().padStart(2, '0') }}</strong><small>livros para explorar</small></div>
       <div><span>EM ANDAMENTO</span><strong>{{ counts.reading.toString().padStart(2, '0') }}</strong><small>capítulos acontecendo</small></div>
       <div><span>CONCLUÍDOS</span><strong>{{ counts.read.toString().padStart(2, '0') }}</strong><small>histórias que ficam</small></div>
       <p>Uma página de cada vez.<br><em>O importante é continuar.</em><span aria-hidden="true">✳</span></p>
     </div>
-    <form v-if="showUpload" id="upload-book" class="library-upload" @submit.prevent="uploadBook">
-      <div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2>Adicione sua próxima leitura</h2><p>Escolha um PDF de até 50 MB. Ele ficará disponível apenas na sua conta.</p></div>
+    <form v-if="showUpload && !selectedFriend" id="upload-book" class="library-upload" @submit.prevent="uploadBook">
+      <div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2>Adicione sua próxima leitura</h2><p>Escolha um PDF de até 50 MB. Seus amigos aceitos também poderão ler este PDF. As marcações de leitura são individuais.</p></div>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"></label>
       <div class="upload-fields"><label>Título<input v-model="title" maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label>Autor <small>(opcional)</small><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
       <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" :disabled="uploading" @click="showUpload = false">Cancelar</button></div>
@@ -257,7 +281,7 @@ function savePage() {
       <label class="library-search"><span aria-hidden="true">⌕</span><input v-model="search" type="search" aria-label="Buscar livros por título ou autor" placeholder="Buscar na estante…"></label>
     </div>
     <p v-if="loading" class="library-empty" role="status">Buscando suas próximas leituras…</p>
-    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>Sua estante começa com um livro.</h2><p>Adicione seu primeiro PDF e encontre aqui um cantinho para ler no seu ritmo.</p><button class="library-primary" type="button" @click="showUpload = true">+ Adicionar meu primeiro livro</button></div>
+    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>{{ selectedFriend ? 'Esta estante ainda não tem livros.' : 'Sua estante começa com um livro.' }}</h2><p>{{ selectedFriend ? 'Quando seu amigo adicionar um PDF, ele aparecerá aqui para você.' : 'Adicione seu primeiro PDF e encontre aqui um cantinho para ler no seu ritmo.' }}</p><button v-if="!selectedFriend" class="library-primary" type="button" @click="showUpload = true">+ Adicionar meu primeiro livro</button></div>
     <div v-else-if="!filtered.length && !error" class="library-empty"><h2>Nenhum livro por aqui.</h2><p>Experimente outro título, autor ou filtro de leitura.</p><button class="library-secondary" type="button" @click="search = ''; filter = 'all'">Limpar filtros</button></div>
     <div v-else class="books-grid">
       <article v-for="(book, index) in visibleBooks" :key="book.id" class="book-card">
@@ -274,6 +298,7 @@ function savePage() {
 </template>
 
 <style scoped>
+.shared-shelf-note { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 12px; }
 .book-library { padding: 28px 0 48px; }
 .library-account, .library-account > span { display: flex; align-items: center; gap: 10px; }
 .library-account { justify-content: space-between; padding-bottom: 22px; border-bottom: 1px solid var(--line); }

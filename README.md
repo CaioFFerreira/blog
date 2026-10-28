@@ -72,16 +72,26 @@ Acesse **Livros** no menu (`/livros.html`, ou `/blog/livros.html` no Pages). Sem
 ### Configuração necessária no Supabase
 
 1. No painel do projeto, abra **SQL Editor → New query**.
-2. Cole o conteúdo de `supabase/migrations/202610280001_private_library.sql` e execute **Run**. O script cria a tabela `library_books`, o bucket privado `library-pdfs` e as políticas RLS. Não exige colocar senhas ou chaves secretas no site.
+2. Para um projeto novo, execute primeiro `supabase/migrations/202610280001_private_library.sql`. Depois execute `supabase/migrations/202610280002_library_friends.sql`. Se a biblioteca já estava configurada, execute **somente o arquivo 002**. Não execute novamente o 001 depois do 002: ele restaura políticas antigas. Não exige senhas ou chaves secretas no site.
 3. Entre com Google no site, abra **Livros → Adicionar livro**, selecione um PDF e informe título e autor opcional.
 
-Cada conta tem sua própria biblioteca. A tabela permite consultar e adicionar apenas registros do usuário autenticado; a atualização pelo frontend é limitada ao status e à última página. O bucket aceita PDFs de até 50 MiB, em caminhos `<user-id>/<uuid>.pdf`, com leitura e envio restritos à conta proprietária. As políticas restritivas também impedem que políticas permissivas de outros buckets liberem esses arquivos. O bucket permanece privado. Sem a migração, a tela mostra falha de carregamento e não expõe dados.
+Cada conta tem sua própria estante e pode consultar as estantes de amigos aceitos. O envio é sempre para a própria conta. O bucket aceita PDFs de até 50 MiB em caminhos `<user-id>/<uuid>.pdf`; downloads são autorizados ao dono e a amigos aceitos somente para livros cadastrados. Amigos não recebem acesso de escrita aos arquivos ou metadados do dono. As políticas restritivas também impedem que políticas permissivas de outros buckets liberem esses arquivos. O bucket permanece privado. Sem a migração, a tela mostra falha de carregamento e não expõe dados.
 
 Há busca por título/autor, filtros de status, contadores e listagem em grupos de 12 (até 1.000 registros consultados). Capas tipográficas são geradas em CSS; nenhum PDF é baixado ao listar os livros. Ao abrir um livro, o aplicativo baixa somente aquele PDF com autenticação e cria uma URL temporária no navegador. Fechar o leitor, sair ou trocar de conta revoga essa URL. Arquivos já baixados ou abertos em outra aba pelo usuário não podem ser recolhidos pelo site.
 
 O leitor usa o visualizador de PDF do navegador e oferece uma alternativa para abrir em outra aba, útil em dispositivos sem suporte a PDF embutido. A página é salva manualmente em **Última página → Salvar página**, pois o visualizador nativo não fornece eventos de mudança de página. Abrir um livro ainda não iniciado muda seu status para **Lendo**; o seletor permite marcar **Lido**. As marcações são persistidas na conta. PDFs devem ser adicionados pelo formulário para criar também seu registro no catálogo.
 
-Para validar a instalação real: entre com duas contas distintas, envie um livro na primeira e confirme que ele não aparece na segunda; sem sessão, teste tanto a rota quanto as APIs de tabela e Storage; confirme status e página após recarregar; abra um PDF e saia para conferir a limpeza do leitor. A execução da migração e o OAuth real precisam ser validados no projeto Supabase pelo proprietário.
+### Amigos e progresso individual
+
+Em **Amigos & estantes → Adicionar amigo**, copie seu código e compartilhe manualmente com um amigo. Ele entra no próprio usuário, cola seu código e envia a solicitação. O destinatário precisa clicar em **Aceitar e compartilhar**. Até esse aceite, não há acesso aos livros. Convites cruzados não aceitam automaticamente a amizade. Não existe busca pública por usuários ou e-mails.
+
+Após aceitar, os dois podem abrir **Ver livros** para ler todos os PDFs atuais e futuros da estante do outro. **Minha estante** retorna aos próprios livros. A página deixa claro que status e contadores representam a leitura do usuário atual. **Remover** encerra o acesso para ambos; novos downloads e gravações são bloqueados imediatamente pelo banco. Ao retornar à aba, a lista de amizades é atualizada e uma estante que perdeu acesso é fechada. Conteúdo já baixado permanece sujeito à limitação descrita acima.
+
+A migração 002 move o progresso para `library_reading_progress`, cuja chave é `(user_id, book_id)`. Ela preserva status e página dos livros existentes. As colunas antigas continuam na tabela apenas para compatibilidade da migração, mas não podem ser lidas pelo frontend, para impedir que amigos consultem o progresso do dono. Cada pessoa pode ler e gravar somente suas próprias marcações, inclusive em livros de amigos. Elas são preservadas após remover uma amizade, mas ficam inacessíveis enquanto o livro não estiver mais disponível.
+
+As funções RPC validam o usuário autenticado, os participantes e o destinatário do convite; usam `search_path` vazio e não expõem e-mails. Tabelas de códigos e amizades não têm acesso direto pelo cliente. Amizades são uma alteração nas permissões de leitura; faça o deploy do novo frontend junto da migração 002, pois versões antigas consultam as colunas de progresso antigas e deixarão de carregar o catálogo.
+
+`npm run test:sharing` executa as duas migrações em PostgreSQL local via PGlite e testa isolamento entre três contas, aceite exclusivo pelo destinatário, PDFs privados, progresso individual, preservação de dados e revogação, incluindo políticas Storage permissivas de outros buckets. PGlite é uma dependência apenas de desenvolvimento e não integra o bundle. Para validar o projeto real, repita os fluxos com duas contas Google no Supabase, incluindo acesso antes/depois do aceite e da remoção. OAuth e a execução das migrações no projeto hospedado precisam ser validados pelo proprietário.
 
 ## Publicar um artigo
 

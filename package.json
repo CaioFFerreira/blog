@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:sharing": "node tests/library-sharing.test.mjs",
     "test:auth": "node --experimental-strip-types tests/auth-errors.test.mjs",
     "test:audio": "node --experimental-strip-types tests/focus-audio.test.mjs",
     "test:pomodoro": "node --experimental-strip-types tests/pomodoro.test.mjs",
@@ -18,6 +19,7 @@
     "vue": "^3.5.42"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "@types/node": "^22.0.0",
     "typescript": "^5.9.0",
     "vitepress": "^1.6.4",
