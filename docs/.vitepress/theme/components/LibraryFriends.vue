@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RequestLoading from './RequestLoading.vue'
+import ToastNotice from './ToastNotice.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
@@ -73,9 +75,11 @@ const accepted = computed(() => friends.value.filter(friend => friend.status ===
 const pending = computed(() => friends.value.filter(friend => friend.status === 'pending'))
 const received = computed(() => pending.value.filter(friend => friend.direction === 'received').length)
 
-async function refresh() {
+let lastRefresh = 0
+async function refresh(force = false) {
   const owner = user.value?.id
-  if (!owner) return
+  if (!owner || loading.value || (!force && Date.now() - lastRefresh < 1000)) return
+  lastRefresh = Date.now()
   const ticket = ++generation
   loading.value = true
   error.value = ''
@@ -97,6 +101,7 @@ async function refresh() {
 }
 watch(() => user.value?.id, () => {
   generation++
+  lastRefresh = 0
   friends.value = []
   code.value = ''
   friendCode.value = ''
@@ -109,7 +114,7 @@ watch(() => user.value?.id, () => {
 }, { immediate: true })
 
 async function act(operation: 'request' | 'accept' | 'remove', friend?: LibraryFriend) {
-  if (!user.value || busy.value) return
+  if (!user.value || busy.value || loading.value) return
   if (operation === 'request' && !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(friendCode.value.trim())) {
     error.value = 'Cole o código completo que seu amigo compartilhou com você.'
     return
@@ -133,7 +138,7 @@ async function act(operation: 'request' | 'accept' | 'remove', friend?: LibraryF
       : operation === 'accept' ? 'Amizade aceita. Vocês já podem explorar as estantes um do outro.'
         : 'Solicitação ou amizade removida.'
     if (operation === 'accept') closeDialog()
-    await refresh()
+    await refresh(true)
   } catch {
     if (user.value?.id === owner && ticket === generation) error.value = operation === 'request'
       ? 'Não foi possível enviar. Confira o código e use o código de outra pessoa.'
@@ -157,11 +162,12 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
 
 <template>
   <section class="friends-panel" aria-label="Amigos da biblioteca">
-    <div class="friends-heading"><div><p class="eyebrow">LEITURAS EM BOA COMPANHIA</p><h2>Amigos & estantes <span>{{ accepted.length }}</span></h2></div><div class="friends-actions"><button type="button" :disabled="loading || busy" @click="refresh">Atualizar</button><button ref="dialogTrigger" class="add-friend" type="button" aria-haspopup="dialog" aria-controls="friends-dialog" @click="openDialog">{{ received ? `Convites recebidos (${received})` : 'Adicionar amigo' }} <span aria-hidden="true">+</span></button></div></div>
+    <RequestLoading :message="busy ? 'Atualizando amizade…' : loading ? 'Carregando amizades…' : ''" />
+    <div class="friends-heading"><div><p class="eyebrow">LEITURAS EM BOA COMPANHIA</p><h2>Amigos & estantes <span>{{ accepted.length }}</span></h2></div><div class="friends-actions"><button type="button" :disabled="loading || busy" @click="refresh()">Atualizar</button><button ref="dialogTrigger" class="add-friend" type="button" aria-haspopup="dialog" aria-controls="friends-dialog" @click="openDialog">{{ received ? `Convites recebidos (${received})` : 'Adicionar amigo' }} <span aria-hidden="true">+</span></button></div></div>
     <p class="friends-caption">Após o aceite, vocês acessam os livros marcados como compartilhados nas duas estantes. Livros privados continuam só com o dono. Sua página e seu status de leitura continuam só seus.</p>
     <p v-if="loading && !expanded" class="friends-message" role="status">Atualizando amizades…</p>
-    <p v-if="error && !expanded" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
-    <p v-if="notice && !expanded" class="friends-message" role="status">{{ notice }}</p>
+    <ToastNotice v-if="!expanded" :model-value="error" kind="error" />
+    <ToastNotice v-if="!expanded" v-model="notice" />
     <dialog id="friends-dialog" ref="friendDialog" class="friends-dialog" aria-labelledby="friends-dialog-title" aria-describedby="friends-dialog-description" @cancel.prevent="closeDialog" @close="onDialogClose" @click="closeOnBackdrop" @keydown="trapFocus">
       <div class="dialog-heading"><div><p class="eyebrow">BOAS LEITURAS, BOAS COMPANHIAS</p><h2 id="friends-dialog-title">Conecte suas estantes.</h2></div><button class="dialog-close" type="button" aria-label="Fechar janela de amigos" @click="closeDialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
       <div class="friends-modal-body">
@@ -172,8 +178,8 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
     </div>
 
       <p v-if="loading" class="friends-message" role="status">Atualizando amizades…</p>
-      <p v-if="error" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
-      <p v-if="notice" class="friends-message" role="status">{{ notice }}</p>
+      <ToastNotice v-if="expanded" :model-value="error" kind="error" />
+      <ToastNotice v-if="expanded" v-model="notice" />
     <div v-if="pending.length" class="friend-requests friends-scroll" tabindex="0" role="region" aria-label="Solicitações de amizade"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
 
       </div>
@@ -185,21 +191,21 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
 </template>
 
 <style scoped>
-.friends-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 90px #0004; }
+.friends-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 90px #0004; }
 .friends-dialog[open] { display: flex; flex-direction: column; }
 .friends-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 30px 22px; scrollbar-gutter: stable; }
 .friends-modal-body .friends-scroll { max-height: none; overflow: visible; scrollbar-gutter: auto; }
 .friends-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
 .dialog-heading { flex-shrink: 0; padding: 22px 30px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .dialog-heading h2 { font-size: clamp(25px, 5vw, 32px); margin: 10px 0; }
-.dialog-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; padding: 0; border-radius: 50%; }
+.dialog-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; padding: 0; border-radius: 2px; }
 .dialog-description { max-width: 540px; color: var(--muted); font-size: 13px; line-height: 1.8; margin: 10px 0 24px; }
 .dialog-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); margin: 0; padding: 16px 30px; }
 .dialog-footer span { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .remove-friend { color: #a32f32; border-color: #a32f3266; background: #a32f320a; }
 .remove-friend:hover:not(:disabled) { background: #a32f321a; }
 :global(.dark) .remove-friend { color: #f3a3a3; border-color: #f3a3a366; background: #f3a3a30a; }
-.friends-panel { border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin: 0 0 30px; background: var(--surface); }
+.friends-panel { border: 1px solid var(--line); border-radius: 2px; padding: 24px; margin: 0 0 30px; background: var(--surface); }
 .friends-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .friends-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 h2 { font: 500 24px/1.3 var(--display); letter-spacing: -.03em; margin: 6px 0; }
@@ -207,15 +213,15 @@ h2 > span { font: 11px var(--mono); color: var(--muted); margin-left: 8px; }
 .friends-caption, .friends-empty { font-size: 12px; color: var(--muted); line-height: 1.8; }
 .friends-caption { margin: 12px 0 20px; max-width: 650px; }
 .friends-empty { margin-bottom: 0; }
-button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; color: var(--green); background: var(--paper); font: 500 12px var(--font-sans); cursor: pointer; }
-button:disabled { opacity: .5; cursor: wait; }
+button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 2px; color: var(--green); background: var(--paper); font: 500 12px var(--font-sans); cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
 .friends-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 0 0 8px; }
-.friends-settings > label, .friends-settings > form { padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.friends-settings > label, .friends-settings > form { padding: 20px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); }
 .friends-settings form button { width: 100%; }
 .add-friend { background: var(--green); color: var(--paper); border-color: var(--green); }
 label { display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: var(--muted); min-width: 0; }
 label small { font-size: 11px; line-height: 1.6; }
-input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font: 12px var(--mono); }
+input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font: 12px var(--mono); }
 .invite-code { display: flex; gap: 8px; }
 form { display: flex; align-items: flex-start; flex-direction: column; gap: 12px; }
 form label { width: 100%; }
@@ -235,5 +241,5 @@ h3 { font: 500 12px var(--display); color: var(--muted); }
 .friend-name strong { color: var(--ink); font-size: 13px; font-weight: 500; }
 .friend-name small { color: var(--muted); font-size: 11px; }
 .visit-friend { margin-left: auto; }
-@media (max-width: 640px) { .friend-list .friend-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-block: 16px; } .friend-row-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; } .friend-row-actions button { width: 100%; min-width: 0; margin: 0; } .friends-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; } .friends-actions button { min-width: 0; } .friend-list { scroll-padding-block: 16px; } .friends-modal-body { padding: 0 20px 18px; } .dialog-heading { padding: 16px 20px; } .dialog-footer { padding: 12px 20px; } .friends-dialog { padding: 0; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; } .friends-dialog input { font-size: 16px; } .friends-settings > label, .friends-settings > form { padding: 16px; } .friends-settings { grid-template-columns: 1fr; } .friends-heading { align-items: flex-start; flex-direction: column; } .friends-panel { padding: 20px; } .friends-heading button { width: 100%; } }
+@media (max-width: 640px) { .friend-list .friend-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-block: 16px; } .friend-row-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; } .friend-row-actions button { width: 100%; min-width: 0; margin: 0; } .friends-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; } .friends-actions button { min-width: 0; } .friend-list { scroll-padding-block: 16px; } .friends-modal-body { padding: 0 20px 18px; } .dialog-heading { padding: 16px 20px; } .dialog-footer { padding: 12px 20px; } .friends-dialog { padding: 0; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 2px; } .friends-dialog input { font-size: 16px; } .friends-settings > label, .friends-settings > form { padding: 16px; } .friends-settings { grid-template-columns: 1fr; } .friends-heading { align-items: flex-start; flex-direction: column; } .friends-panel { padding: 20px; } .friends-heading button { width: 100%; } }
 </style>

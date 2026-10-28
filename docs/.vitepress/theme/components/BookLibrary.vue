@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RequestLoading from './RequestLoading.vue'
+import ToastNotice from './ToastNotice.vue'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
@@ -9,7 +11,7 @@ import PageComments from './PageComments.vue'
 import { pdfSizeLabel, uploadErrorMessage, type UploadStage } from '../upload-errors'
 import { bookFields, withReadingProgress, type BookVisibility, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
-const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
+const { user, ready, busy: authBusy, accountName, signIn } = useAuth()
 const readerPageReady = ref(false)
 const books = ref<LibraryBook[]>([])
 const friends = ref<LibraryFriend[]>([])
@@ -96,6 +98,7 @@ const fileInput = ref<HTMLInputElement>()
 const file = ref<File | null>(null)
 const opening = ref<string | null>(null)
 const saving = ref<string | null>(null)
+const requestMessage = computed(() => uploading.value ? 'Enviando PDF…' : deletingBook.value ? 'Excluindo livro…' : savingVisibility.value ? 'Atualizando visibilidade…' : saving.value ? 'Salvando sua leitura…' : opening.value ? 'Abrindo PDF…' : loading.value ? 'Carregando biblioteca…' : '')
 const activeBook = ref<LibraryBook | null>(null)
 const pdfUrl = ref('')
 const page = ref(1)
@@ -229,7 +232,7 @@ async function uploadBook() {
   const owner = uid.value
   const selected = file.value
   let stage: UploadStage = 'file'
-  if (!owner || !selected || uploading.value || selectedFriend.value) return
+  if (!owner || !selected || requestMessage.value || selectedFriend.value) return
   const ticket = generation
   uploading.value = true
   error.value = ''
@@ -274,7 +277,7 @@ async function changeVisibility(book: LibraryBook, event: Event) {
   const select = event.target as HTMLSelectElement
   const visibility = select.value as BookVisibility
   select.value = book.visibility
-  if (!owner || book.owner_id !== owner || savingVisibility.value || !['private', 'friends'].includes(visibility)) return
+  if (!owner || book.owner_id !== owner || requestMessage.value || !['private', 'friends'].includes(visibility)) return
   const ticket = generation
   savingVisibility.value = book.id
   error.value = ''
@@ -295,7 +298,7 @@ async function changeVisibility(book: LibraryBook, event: Event) {
 }
 async function deleteBook(book: LibraryBook) {
   const owner = uid.value
-  if (!owner || book.owner_id !== owner || deletingBook.value) return
+  if (!owner || book.owner_id !== owner || requestMessage.value) return
   if (!window.confirm(`Excluir “${book.title}”? O PDF, os comentários e o progresso de todos serão apagados. Esta ação não pode ser desfeita.`)) return
   deletingBook.value = book.id
   const ticket = generation
@@ -329,7 +332,7 @@ async function deleteBook(book: LibraryBook) {
 }
 async function saveBook(book: LibraryBook, changes: { status?: ReadingStatus; last_page?: number }) {
   const owner = uid.value
-  if (!owner || saving.value) return
+  if (!owner || requestMessage.value) return
   const ticket = generation
   saving.value = book.id
   error.value = ''
@@ -357,7 +360,7 @@ function changeStatus(book: LibraryBook, event: Event) {
 }
 async function openBook(book: LibraryBook) {
   const owner = uid.value
-  if (!owner) return
+  if (!owner || requestMessage.value) return
   closeReader()
   const request = ++openRequest
   const ticket = generation
@@ -404,11 +407,11 @@ function savePage(currentPage = page.value) {
     <button class="library-primary" type="button" :disabled="authBusy" @click="signIn('/livros.html')">
       <span class="google-letter" aria-hidden="true">G</span>{{ authBusy ? 'Entrando…' : 'Entrar com Google' }}<span aria-hidden="true">↗</span>
     </button>
-    <p v-if="authError" class="library-error" role="alert">{{ authError }}</p>
     <small>Seus livros e suas marcações ficam na sua conta.</small>
     <a :href="withBase('/')">← Voltar aos artigos</a>
   </section>
   <section v-else class="book-library">
+    <RequestLoading :message="requestMessage" />
     <div class="library-account">
       <span><i aria-hidden="true"></i>BIBLIOTECA PRIVADA</span>
     </div>
@@ -438,14 +441,14 @@ function savePage(currentPage = page.value) {
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
       <div class="upload-fields"><label>Título<input v-model="title" autofocus maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label><span class="upload-label-heading">Autor <small>(opcional)</small></span><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
       <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Apenas seus amigos aceitos. Exige login.</small></span></label></fieldset>
-      <p v-if="error" class="library-error" role="alert">{{ error }}</p>
+      <ToastNotice v-if="showUpload" :model-value="error" kind="error" />
       </div>
       <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
     </form>
     </dialog>
-    <p v-if="authError" class="library-error" role="alert">{{ authError }}</p>
-    <div v-if="error && !showUpload" class="library-error" role="alert">{{ error }} <button v-if="!books.length && !uploading" type="button" @click="loadBooks">Tentar novamente</button></div>
-    <p v-if="notice" class="library-notice" role="status">{{ notice }}</p>
+    <ToastNotice v-if="!showUpload" :model-value="error" kind="error" />
+    <button v-if="error && !books.length && !uploading" class="library-secondary" type="button" @click="loadBooks">Tentar novamente</button>
+    <ToastNotice v-model="notice" />
     <section v-if="activeBook && pdfUrl" class="library-reader" aria-label="Leitor de PDF">
       <div class="reader-top"><div><p class="eyebrow">MODO LEITURA</p><h2 ref="readerHeading" tabindex="-1">{{ activeBook.title }}</h2><p class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button class="library-secondary" type="button" @click="closeReader">Fechar leitor ×</button></div>
       <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="activeBook.last_page" :title="activeBook.title" :saving="!!saving" @page-change="page = $event" @save="savePage" @ready="readerPageReady = $event" />
@@ -479,16 +482,16 @@ function savePage(currentPage = page.value) {
 </template>
 
 <style scoped>
-.book-delete { width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent); border-radius: 6px; background: transparent; color: var(--orange); font: 500 12px var(--font-sans); cursor: pointer; }
+.book-delete { width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent); border-radius: 2px; background: transparent; color: var(--orange); font: 500 12px var(--font-sans); cursor: pointer; }
 .book-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--orange) 10%, transparent); }
-.book-delete:disabled { opacity: .6; cursor: wait; }
-.library-tabs { display: flex; gap: 6px; margin-top: 24px; padding: 5px; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-.library-tabs button { min-height: 44px; min-width: 120px; padding: 10px 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.book-delete:disabled { opacity: .6; cursor: default; }
+.library-tabs { display: flex; gap: 6px; margin-top: 24px; padding: 5px; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); }
+.library-tabs button { min-height: 44px; min-width: 120px; padding: 10px 24px; border: 0; border-radius: 2px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .library-tabs button[aria-selected="true"] { background: var(--green); color: var(--paper); }
 .library-tabs button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .library-friends-panel { padding-top: 32px; }
 @media (max-width: 480px) { .library-tabs { width: 100%; box-sizing: border-box; } .library-tabs button { flex: 1; min-width: 0; } }
-.upload-privacy { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.upload-privacy { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 2px; }
 .upload-privacy legend { padding-inline: 6px; color: var(--muted); font-size: 12px; }
 .library-upload .upload-privacy label { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
 .library-upload .upload-privacy input { width: 20px; min-height: 20px; height: 20px; margin: 0; padding: 0; flex-shrink: 0; accent-color: var(--green); }
@@ -498,7 +501,7 @@ function savePage(currentPage = page.value) {
 .book-owner { display: flex; align-items: flex-start; gap: 6px; margin: 10px 0; color: var(--green); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .book-owner > span { flex-shrink: 0; font-size: 10px; }
 .reader-owner { color: var(--muted); font-size: 12px; line-height: 1.6; }
-.shared-shelf-note { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 12px; }
+.shared-shelf-note { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); font-size: 12px; }
 .book-library { padding: 28px 0 48px; }
 .library-account, .library-account > span { display: flex; align-items: center; gap: 10px; }
 .library-account { justify-content: space-between; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
@@ -507,11 +510,11 @@ function savePage(currentPage = page.value) {
 .library-intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 50px 0 34px; }
 .library-intro h1 { font-size: clamp(32px, 4.5vw, 54px); line-height: 1.12; letter-spacing: -.055em; margin: 12px 0 18px; }
 .library-intro p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
-.library-primary, .library-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 12px 18px; border: 1px solid var(--green); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; text-decoration: none; }
+.library-primary, .library-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 12px 18px; border: 1px solid var(--green); border-radius: 2px; cursor: pointer; font-size: 13px; font-weight: 600; text-decoration: none; }
 .library-primary { background: var(--green); color: var(--paper); }
 .library-secondary { background: var(--surface); color: var(--green); }
-button:disabled { opacity: .55; cursor: wait; }
-.library-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-bottom: 34px; overflow: hidden; }
+button:disabled { opacity: .55; cursor: default; }
+.library-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); margin-bottom: 34px; overflow: hidden; }
 .library-stats > div { padding: 24px; border-right: 1px solid var(--line); display: grid; gap: 8px; }
 .library-stats div > span { color: var(--muted); font: 9px var(--mono); letter-spacing: .08em; }
 .library-stats strong { color: var(--green); font: 400 38px var(--display); letter-spacing: -.04em; }
@@ -519,29 +522,29 @@ button:disabled { opacity: .55; cursor: wait; }
 .library-stats > p { position: relative; padding: 20px 30px; margin: 0; display: flex; justify-content: center; flex-direction: column; color: var(--muted); font-size: 13px; line-height: 1.9; }
 .library-stats em { color: var(--green); font-style: normal; }
 .library-stats p > span { position: absolute; right: 25px; bottom: 14px; font-size: 42px; opacity: .25; }
-.library-toolbar { display: grid; grid-template-columns: minmax(190px, .85fr) minmax(350px, 1.6fr) minmax(220px, 1fr); gap: 22px; align-items: end; padding: 22px; margin: 30px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 3px 12px #00000003; }
+.library-toolbar { display: grid; grid-template-columns: minmax(190px, .85fr) minmax(350px, 1.6fr) minmax(220px, 1fr); gap: 22px; align-items: end; padding: 22px; margin: 30px 0; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); box-shadow: 0 3px 12px #00000003; }
 .filter-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: .01em; line-height: 1.4; }
 .shelf-filter, .reading-filter, .library-search { min-width: 0; }
-.shelf-select, .search-input { display: flex; align-items: center; position: relative; min-height: 48px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--muted); transition: border-color .15s, box-shadow .15s; }
+.shelf-select, .search-input { display: flex; align-items: center; position: relative; min-height: 48px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--muted); transition: border-color .15s, box-shadow .15s; }
 .shelf-select:focus-within, .search-input:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 12%, transparent); }
 .shelf-select > svg:first-child, .search-input > svg { position: absolute; left: 14px; pointer-events: none; flex-shrink: 0; }
 .shelf-select select { appearance: none; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; padding: 12px 34px 12px 42px; border: 0; border-radius: inherit; outline: none; background: transparent; color: var(--ink); font: 500 13px var(--font-sans); text-overflow: ellipsis; cursor: pointer; }
 .shelf-select select option { background: var(--surface); color: var(--ink); }
 .select-chevron { position: absolute; right: 12px; pointer-events: none; }
-.library-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; min-height: 48px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); }
-.library-filters button { display: flex; justify-content: center; align-items: center; gap: 7px; min-width: 0; min-height: 40px; padding: 8px 7px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: color .15s, background .15s, box-shadow .15s; white-space: nowrap; }
+.library-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; min-height: 48px; padding: 4px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); }
+.library-filters button { display: flex; justify-content: center; align-items: center; gap: 7px; min-width: 0; min-height: 40px; padding: 8px 7px; border: 0; border-radius: 2px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: color .15s, background .15s, box-shadow .15s; white-space: nowrap; }
 .library-filters button:hover { color: var(--green); background: color-mix(in srgb, var(--green) 7%, transparent); }
 .library-filters button[aria-pressed='true'] { color: var(--paper); background: var(--green); box-shadow: 0 2px 5px #00000012; }
-.library-filters button > span { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 9%, transparent); font-size: 10px; font-variant-numeric: tabular-nums; }
+.library-filters button > span { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 2px; background: color-mix(in srgb, currentColor 9%, transparent); font-size: 10px; font-variant-numeric: tabular-nums; }
 .library-filters button[aria-pressed='true'] > span { background: color-mix(in srgb, var(--paper) 18%, transparent); }
 .library-search { display: block; }
 .library-search input { display: block; width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px 12px 42px; border: 0; border-radius: inherit; outline: none; background: transparent; color: var(--ink); font-size: 13px; }
 .library-search input::placeholder { color: var(--muted); opacity: .8; }
 @media (max-width: 1100px) { .library-toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; } .shelf-filter { grid-column: 1; grid-row: 1; } .library-search { grid-column: 2; grid-row: 1; } .reading-filter { grid-column: 1 / -1; } }
-@media (max-width: 560px) { .library-toolbar { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; border-radius: 10px; } .shelf-filter, .library-search, .reading-filter { grid-column: 1; grid-row: auto; } .shelf-filter { order: 0; } .library-search { order: 1; } .reading-filter { order: 2; } .library-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; } .library-filters button { min-height: 44px; font-size: 13px; } .shelf-select select, .library-search input { font-size: 16px; } .filter-label { margin-bottom: 8px; } }
+@media (max-width: 560px) { .library-toolbar { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; border-radius: 2px; } .shelf-filter, .library-search, .reading-filter { grid-column: 1; grid-row: auto; } .shelf-filter { order: 0; } .library-search { order: 1; } .reading-filter { order: 2; } .library-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; } .library-filters button { min-height: 44px; font-size: 13px; } .shelf-select select, .library-search input { font-size: 16px; } .filter-label { margin-bottom: 8px; } }
 @media (prefers-reduced-motion: reduce) { .shelf-select, .search-input, .library-filters button { transition: none; } }
 .books-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px; }
-.book-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.book-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); overflow: hidden; transition: transform .2s, box-shadow .2s; }
 .book-cover { flex-shrink: 0; aspect-ratio: 4/4.7; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 16px; padding: 28px 26px; background: #234d3e; color: #f4f1dc; border-left: 8px solid #0002; }
 .cover-1 { background: #ded8c5; color: #343d34; }
 .cover-2 { background: #913f32; color: #fff0d8; }
@@ -561,44 +564,44 @@ button:disabled { opacity: .55; cursor: wait; }
 .book-visibility-control { padding: 0; }
 .book-select { display: block; position: relative; min-width: 0; }
 .book-select > svg { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
-.book-status-label select { appearance: none; -webkit-appearance: none; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 10px 36px 10px 10px; border: 1px solid var(--line); border-radius: 6px; font: 12px var(--font-sans); background: var(--surface); color: var(--ink); cursor: pointer; }
+.book-status-label select { appearance: none; -webkit-appearance: none; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 10px 36px 10px 10px; border: 1px solid var(--line); border-radius: 2px; font: 12px var(--font-sans); background: var(--surface); color: var(--ink); cursor: pointer; }
 .book-status-label select:focus-visible { outline-offset: 2px; }
-.book-status-label select:disabled { opacity: .6; cursor: wait; }
-.book-read { margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--green); color: var(--paper); font: 600 12px var(--font-sans); cursor: pointer; }
+.book-status-label select:disabled { opacity: .6; cursor: default; }
+.book-read { margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--green); color: var(--paper); font: 600 12px var(--font-sans); cursor: pointer; }
 .book-read { border-color: var(--green); }
 .book-read:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 90%, var(--ink)); }
-.upload-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--surface); box-shadow: 0 24px 90px #0004; }
+.upload-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 2px; color: var(--ink); background: var(--surface); box-shadow: 0 24px 90px #0004; }
 .upload-dialog[open] { display: flex; flex-direction: column; }
 .upload-modal-body { display: grid; gap: 20px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 30px; scrollbar-gutter: stable; }
 .upload-modal-body > p { margin: 0; }
 .upload-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
 .upload-modal-heading { flex-shrink: 0; padding: 22px 30px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.upload-close { flex-shrink: 0; width: 44px; padding: 0; border-radius: 50%; }
+.upload-close { flex-shrink: 0; width: 44px; padding: 0; border-radius: 2px; }
 .library-upload { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; min-height: 0; max-height: inherit; padding: 0; margin: 0; overflow: hidden; }
 .library-upload > p { margin: 0; }
 .library-upload input[type='file'] { min-width: 0; font-size: 12px; }
-.library-upload input[type='file']::file-selector-button { max-width: 100%; margin-right: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--green); font: inherit; }
-@media (max-width: 640px) { .upload-modal-heading { padding: 16px 20px; } .upload-modal-body { padding: 16px 20px; } .upload-actions { padding: 12px 20px; } .upload-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; } .upload-dialog .upload-fields { grid-template-columns: minmax(0, 1fr); } .upload-dialog input:not([type='file']) { font-size: 16px; } .upload-actions > button { flex: 1; } }
+.library-upload input[type='file']::file-selector-button { max-width: 100%; margin-right: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--green); font: inherit; }
+@media (max-width: 640px) { .upload-modal-heading { padding: 16px 20px; } .upload-modal-body { padding: 16px 20px; } .upload-actions { padding: 12px 20px; } .upload-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 2px; } .upload-dialog .upload-fields { grid-template-columns: minmax(0, 1fr); } .upload-dialog input:not([type='file']) { font-size: 16px; } .upload-actions > button { flex: 1; } }
 .library-upload h2 { margin: 8px 0; font-size: 24px; }
 .library-upload p:not(.eyebrow) { color: var(--muted); font-size: 13px; line-height: 1.7; }
 .library-upload label { display: grid; gap: 10px; color: var(--muted); font-size: 12px; }
-.library-upload input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); }
+.library-upload input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); }
 .library-upload input[type='file'] { padding: 18px; border-style: dashed; }
 .upload-label-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .upload-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .upload-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 12px; padding: 16px 30px; border-top: 1px solid var(--line); }
-.library-error, .library-notice { border: 1px solid var(--line); border-radius: 5px; padding: 14px 18px; font-size: 13px; line-height: 1.7; background: var(--surface); }
+.library-error, .library-notice { border: 1px solid var(--line); border-radius: 2px; padding: 14px 18px; font-size: 13px; line-height: 1.7; background: var(--surface); }
 .library-error { color: var(--orange); }
 .library-error button { min-height: 44px; border: 0; color: var(--green); background: transparent; text-decoration: underline; cursor: pointer; }
 .library-notice { color: var(--green); }
-.library-reader { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: visible; margin-block: 28px; }
+.library-reader { border: 1px solid var(--line); border-radius: 2px; background: var(--surface); overflow: visible; margin-block: 28px; }
 .reader-top { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .reader-top h2 { margin: 8px 0 0; font-size: 24px; overflow-wrap: anywhere; scroll-margin-top: 20px; }
 .reader-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-top: 1px solid var(--line); font-size: 12px; }
 .reader-controls form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.reader-controls input { width: 84px; min-height: 44px; margin-left: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); }
+.reader-controls input { width: 84px; min-height: 44px; margin-left: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); }
 .reader-hint { padding: 0 24px; font-size: 11px; color: var(--muted); line-height: 1.7; }
-.library-empty { text-align: center; padding: 70px 24px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.library-empty { text-align: center; padding: 70px 24px; border: 1px dashed var(--line); border-radius: 2px; color: var(--muted); }
 .library-empty > span { font-size: 48px; color: var(--green); }
 .library-empty h2 { color: var(--ink); font-size: 26px; letter-spacing: -.04em; }
 .library-empty p { max-width: 400px; margin: 0 auto 24px; font-size: 14px; line-height: 1.8; }
@@ -613,7 +616,7 @@ button:disabled { opacity: .55; cursor: wait; }
 .google-letter { display: grid; place-items: center; width: 24px; height: 24px; background: var(--surface); color: var(--green); border-radius: 50%; font-weight: 700; }
 .library-symbol { font-size: 50px; color: var(--green); }
 .gate-art { display: flex; align-items: flex-end; justify-content: center; position: relative; width: 200px; height: 140px; margin-bottom: 35px; border-bottom: 2px solid var(--line); }
-.gate-art > span { width: 35px; height: 100px; background: #234d3e; border-radius: 4px 4px 0 0; border-left: 5px solid #0002; margin: 0 3px; box-shadow: inset 0 14px #fff1, inset 0 -14px #fff1; }
+.gate-art > span { width: 35px; height: 100px; background: #234d3e; border-radius: 2px 2px 0 0; border-left: 5px solid #0002; margin: 0 3px; box-shadow: inset 0 14px #fff1, inset 0 -14px #fff1; }
 .gate-art > span:nth-child(2) { height: 122px; background: #c7baa0; }
 .gate-art > span:nth-child(3) { height: 110px; background: #913f32; transform: rotate(12deg); transform-origin: bottom; margin-left: 8px; }
 .gate-art b { position: absolute; right: 6px; bottom: -14px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--green); width: 45px; height: 45px; display: grid; place-items: center; font-size: 24px; }
