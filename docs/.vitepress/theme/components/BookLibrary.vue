@@ -91,6 +91,7 @@ const title = ref('')
 const author = ref('')
 const uploadVisibility = ref<BookVisibility>('private')
 const savingVisibility = ref<string | null>(null)
+const deletingBook = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement>()
 const file = ref<File | null>(null)
 const opening = ref<string | null>(null)
@@ -292,6 +293,40 @@ async function changeVisibility(book: LibraryBook, event: Event) {
     if (ticket === generation) savingVisibility.value = null
   }
 }
+async function deleteBook(book: LibraryBook) {
+  const owner = uid.value
+  if (!owner || book.owner_id !== owner || deletingBook.value) return
+  if (!window.confirm(`Excluir “${book.title}”? O PDF, os comentários e o progresso de todos serão apagados. Esta ação não pode ser desfeita.`)) return
+  deletingBook.value = book.id
+  const ticket = generation
+  let fileRemoved = false
+  error.value = ''
+  notice.value = ''
+  try {
+    const client = await getSupabase(withBase('/'))
+    const { data: path, error: permissionError } = await client.rpc('library_book_deletion_path', { target_book: book.id })
+    if (permissionError || !path || path !== book.pdf_path) throw permissionError ?? new Error('Access denied')
+    if (uid.value !== owner) return
+    const { error: storageError } = await client.storage.from(pdfBucket).remove([path])
+    if (storageError) throw storageError
+    fileRemoved = true
+    const { data, error: deleteError } = await client.from('library_books').delete().eq('id', book.id).eq('owner_id', owner).select('id').single()
+    if (deleteError || !data) throw deleteError ?? new Error('Deletion failed')
+    if (ticket !== generation || uid.value !== owner) return
+    if (activeBook.value?.id === book.id) closeReader()
+    books.value = books.value.filter(item => item.id !== book.id)
+    notice.value = 'Livro excluído.'
+  } catch {
+    if (ticket === generation && uid.value === owner) {
+      if (fileRemoved && activeBook.value?.id === book.id) closeReader()
+      error.value = fileRemoved
+        ? 'O PDF foi removido, mas não foi possível apagar o cadastro. Clique em Excluir livro novamente para concluir.'
+        : 'Não foi possível excluir o livro. Confira se a migração 006 foi aplicada e tente novamente.'
+    }
+  } finally {
+    deletingBook.value = null
+  }
+}
 async function saveBook(book: LibraryBook, changes: { status?: ReadingStatus; last_page?: number }) {
   const owner = uid.value
   if (!owner || saving.value) return
@@ -433,6 +468,7 @@ function savePage(currentPage = page.value) {
             <label v-if="book.owner_id === uid" class="book-status-label book-visibility-control"><span class="book-control-title">Visibilidade</span><span class="book-select"><select :value="book.visibility" :disabled="!!savingVisibility" :aria-label="`Privacidade de ${book.title}`" @change="changeVisibility(book, $event)"><option value="private">Privado</option><option value="friends">Amigos</option></select><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></label>
           </div>
           <button class="book-read" type="button" :disabled="opening === book.id" @click="openBook(book)">{{ opening === book.id ? 'Abrindo PDF…' : book.status === 'reading' ? 'Continuar leitura' : 'Abrir livro' }}<span aria-hidden="true">↗</span></button>
+          <button v-if="book.owner_id === uid" class="book-delete" type="button" :disabled="!!deletingBook" :aria-label="`Excluir livro ${book.title}`" @click="deleteBook(book)">{{ deletingBook === book.id ? 'Excluindo…' : 'Excluir livro' }}</button>
         </div>
       </article>
     </div>
@@ -443,6 +479,9 @@ function savePage(currentPage = page.value) {
 </template>
 
 <style scoped>
+.book-delete { width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent); border-radius: 6px; background: transparent; color: var(--orange); font: 500 12px var(--font-sans); cursor: pointer; }
+.book-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--orange) 10%, transparent); }
+.book-delete:disabled { opacity: .6; cursor: wait; }
 .library-tabs { display: flex; gap: 6px; margin-top: 24px; padding: 5px; width: fit-content; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .library-tabs button { min-height: 44px; min-width: 120px; padding: 10px 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .library-tabs button[aria-selected="true"] { background: var(--green); color: var(--paper); }
