@@ -18,6 +18,7 @@ async function asUser(id) {
 async function scalar(sql, params = []) { return Object.values((await db.query(sql, params)).rows[0])[0] }
 async function visibleBooks() { return (await db.query(`select ${columns} from public.library_books`)).rows }
 async function visiblePdfs() { return (await db.query("select name from storage.objects where bucket_id = 'library-pdfs'")).rows }
+const insertFix = await readFile(new URL('../supabase/migrations/202610280003_library_book_insert_returning.sql', import.meta.url), 'utf8')
 const first = await readFile(new URL('../supabase/migrations/202610280001_private_library.sql', import.meta.url), 'utf8')
 const sharing = await readFile(new URL('../supabase/migrations/202610280002_library_friends.sql', import.meta.url), 'utf8')
 
@@ -45,6 +46,13 @@ test('friendship consent, private PDF access, independent progress and revocatio
     [book, alice, 'Livro da Alice', path, 'read', 40])
   await db.query("insert into storage.objects(bucket_id,name) values('library-pdfs',$1)", [path])
   await db.exec(sharing)
+  await t.test('reproduces the old owner INSERT RETURNING denial and applies the fix', async () => {
+    await asUser(alice)
+    await assert.rejects(db.query(`insert into public.library_books(owner_id,title,pdf_path) values($1,'New upload',$2) returning ${columns}`,
+      [alice, `${alice}/regression.pdf`]), {code:'42501'})
+    await db.exec('reset role')
+    await db.exec(insertFix)
+  })
 
   await t.test('owner progress is preserved by the migration and legacy progress cannot leak', async () => {
     await asUser(alice)
@@ -114,6 +122,7 @@ test('friendship consent, private PDF access, independent progress and revocatio
     await db.exec('reset role')
     assert.equal(await scalar('select last_page from public.library_reading_progress where user_id=$1',[bob]),12)
     await db.exec(sharing)
+    await db.exec(insertFix)
     assert.equal(await scalar('select last_page from public.library_reading_progress where user_id=$1',[bob]),12)
     await asUser(alice)
     assert.equal((await visiblePdfs()).length,1)
@@ -123,6 +132,20 @@ test('friendship consent, private PDF access, independent progress and revocatio
     await assert.rejects(db.query('select public.library_my_friend_code()'), /permission denied/)
     await assert.rejects(db.query(`select ${columns} from public.library_books`), /permission denied/)
     assert.equal((await visiblePdfs()).length,0)
+  })
+  await t.test('owner uploads can return their metadata; other owners and legacy progress stay blocked', async () => {
+    await asUser(alice)
+    const added = await db.query(`insert into public.library_books(owner_id,title,pdf_path) values($1,'New upload',$2) returning ${columns}`,
+      [alice, `${alice}/new-upload.pdf`])
+    assert.equal(added.rows.length,1)
+    assert.equal(added.rows[0].owner_id,alice)
+    await asUser(bob)
+    await assert.rejects(db.query(`insert into public.library_books(owner_id,title,pdf_path) values($1,'Forged',$2) returning ${columns}`,
+      [alice, `${alice}/forged-upload.pdf`]), {code:'42501'})
+    assert.equal((await visibleBooks()).length,0)
+    await assert.rejects(db.query('select status,last_page from public.library_books'), /permission denied/)
+    await db.exec('reset role')
+    await db.exec(insertFix)
   })
   await db.close()
 })

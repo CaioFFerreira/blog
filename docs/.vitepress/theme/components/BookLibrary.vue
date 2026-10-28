@@ -5,6 +5,7 @@ import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
 import LibraryFriends from './LibraryFriends.vue'
 import PdfReader from './PdfReader.vue'
+import { pdfSizeLabel, uploadErrorMessage, type UploadStage } from '../upload-errors'
 import { bookFields, withReadingProgress, type BookWithProgress, type LibraryFriend, normalizeSearch, pdfBucket, statusLabels, validatePdf, type LibraryBook, type ReadingStatus } from '../library'
 
 const { user, ready, busy: authBusy, accountName, errorMessage: authError, signIn } = useAuth()
@@ -194,11 +195,14 @@ function refreshFriends(list: LibraryFriend[]) {
 function chooseFile(event: Event) {
   const input = event.target as HTMLInputElement
   file.value = input.files?.[0] ?? null
+  error.value = ''
+  notice.value = ''
   if (!title.value && file.value) title.value = file.value.name.replace(/\.pdf$/i, '').replace(/[_-]/g, ' ')
 }
 async function uploadBook() {
   const owner = uid.value
   const selected = file.value
+  let stage: UploadStage = 'file'
   if (!owner || !selected || uploading.value || selectedFriend.value) return
   const ticket = generation
   uploading.value = true
@@ -216,6 +220,7 @@ async function uploadBook() {
     if (uploadError) throw uploadError
     // A logout invalidates all in-flight UI operations.
     if (ticket !== generation || uid.value !== owner) return
+    stage = 'catalog'
     const { data, error: insertError } = await client.from('library_books').insert({
       owner_id: owner, title: title.value.trim(), author: author.value.trim(), pdf_path: path,
     }).select(bookFields).single()
@@ -231,8 +236,8 @@ async function uploadBook() {
     if (fileInput.value) fileInput.value.value = ''
     closeUpload()
     notice.value = 'Livro adicionado à sua biblioteca.'
-  } catch {
-    if (ticket === generation) error.value = 'Não foi possível adicionar o PDF. Confira o espaço disponível e tente novamente.'
+  } catch (failure) {
+    if (ticket === generation) error.value = uploadErrorMessage(failure, stage, selected.size)
   } finally {
     if (ticket === generation) uploading.value = false
   }
@@ -337,7 +342,7 @@ function savePage(currentPage = page.value) {
     <dialog v-if="!selectedFriend" id="upload-book" ref="uploadDialog" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description" @cancel.prevent="closeUpload" @close="onUploadClose" @click="uploadBackdrop" @keydown="uploadFocus">
     <form class="library-upload" @submit.prevent="uploadBook">
       <div class="upload-modal-heading"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button class="upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div><p id="upload-description">Escolha um PDF de até 50 MB. Seus amigos aceitos também poderão ler este PDF. As marcações de leitura são individuais.</p>
-      <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"></label>
+      <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
       <div class="upload-fields"><label>Título<input v-model="title" autofocus maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label><span class="upload-label-heading">Autor <small>(opcional)</small></span><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
       <p v-if="error" class="library-error" role="alert">{{ error }}</p>
       <div class="upload-actions"><button class="library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button class="library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>

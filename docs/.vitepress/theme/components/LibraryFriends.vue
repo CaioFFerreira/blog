@@ -136,6 +136,7 @@ async function act(operation: 'request' | 'accept' | 'remove', friend?: LibraryF
     notice.value = operation === 'request' ? 'Solicitação enviada. O acesso depende do aceite do seu amigo.'
       : operation === 'accept' ? 'Amizade aceita. Vocês já podem explorar as estantes um do outro.'
         : 'Solicitação ou amizade removida.'
+    if (operation === 'accept') closeDialog()
     await refresh()
   } catch {
     if (user.value?.id === owner && ticket === generation) error.value = operation === 'request'
@@ -176,12 +177,12 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
       <p v-if="loading" class="friends-message" role="status">Atualizando amizades…</p>
       <p v-if="error" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
       <p v-if="notice" class="friends-message" role="status">{{ notice }}</p>
-    <div v-if="pending.length" class="friend-requests"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
+    <div v-if="pending.length" class="friend-requests friends-scroll" tabindex="0" role="region" aria-label="Solicitações de amizade"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
 
-      <div v-if="accepted.length" class="dialog-friends"><h3>Suas amizades</h3><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button type="button" :disabled="busy" @click="visitFriend(friend)">Ver livros ↗</button><button type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
+      <div v-if="accepted.length" class="dialog-friends friends-scroll" tabindex="0" role="region" aria-label="Gerenciar amizades"><h3>Suas amizades</h3><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button type="button" :disabled="busy" @click="visitFriend(friend)">Ver livros ↗</button><button type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
       <footer class="dialog-footer"><span>Você escolhe quais convites aceitar.</span><button type="button" @click="closeDialog">Concluir</button></footer>
     </dialog>
-    <div v-if="accepted.length" class="friend-list"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button></div></div>
+    <div v-if="accepted.length" class="friend-list friends-scroll" tabindex="0" role="region" aria-label="Estantes dos amigos"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button></div></div>
     <p v-else-if="!loading && !error" class="friends-empty">Uma boa leitura fica ainda melhor quando é compartilhada. Convide alguém para começar.</p>
   </section>
 </template>
@@ -220,6 +221,8 @@ form button, .accept-friend { background: var(--green); color: var(--paper); bor
 .friends-message { color: var(--green); }
 .friends-error { color: var(--orange); }
 h3 { font: 500 12px var(--display); color: var(--muted); }
+.friends-scroll { max-height: min(340px, 45dvh); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.friends-scroll > h3 { position: sticky; top: 0; z-index: 1; margin: 0; padding: 14px 0; background: var(--surface); }
 .friend-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 0; border-top: 1px solid var(--line); }
 .friend-avatar { width: 34px; height: 34px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; color: var(--green); background: var(--paper); border: 1px solid var(--line); font-size: 13px; }
 .friend-name { display: flex; flex: 1; min-width: 120px; flex-direction: column; gap: 5px; overflow-wrap: anywhere; }

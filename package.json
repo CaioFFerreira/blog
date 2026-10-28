@@ -7,6 +7,7 @@
     "prepare:pdf": "node scripts/prepare-pdf-assets.mjs",
     "predev": "npm run prepare:pdf",
     "prebuild": "npm run prepare:pdf",
+    "test:upload": "node --experimental-strip-types tests/upload-errors.test.mjs",
     "test:sharing": "node tests/library-sharing.test.mjs",
     "test:auth": "node --experimental-strip-types tests/auth-errors.test.mjs",
     "test:audio": "node --experimental-strip-types tests/focus-audio.test.mjs",
