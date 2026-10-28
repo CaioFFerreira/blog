@@ -35,6 +35,8 @@ O banco editorial fica em `docs/.vitepress/theme/quiz-bank.json`, com uma entrad
 
 ## Desenvolvimento
 
+A interface usa DM Sans, títulos em Space Grotesk e detalhes e exemplos de código em DM Mono, carregadas pelo Google Fonts com `display=swap` e fontes alternativas do sistema. Os filtros da biblioteca se adaptam a desktop, tablet e celular, com controles empilhados e status em duas colunas nas telas menores.
+
 ### Login com Google
 
 O cabeçalho oferece **Entrar com Google**, mostra o nome da conta autenticada e permite **Sair** neste navegador. O cliente Supabase é carregado apenas no navegador, restaura a sessão após recarregar e acompanha mudanças de autenticação. Falhas de login aparecem junto ao botão. O retorno OAuth é processado antes de o roteador iniciar; o resultado de `auth.initialize()` é conferido para que erros do provedor não sejam confundidos com uma visita sem login. A interface mostra uma orientação e um código seguro, sem expor tokens nem a URL de callback. `npm run test:auth` verifica esse tratamento. Quizzes e Pomodoro continuam locais. A biblioteca usa a conta para armazenar PDFs e progresso de leitura no Supabase.
@@ -73,7 +75,7 @@ Acesse **Livros** no menu (`/livros.html`, ou `/blog/livros.html` no Pages). Sem
 
 1. No painel do projeto, abra **SQL Editor → New query**.
 2. Para um projeto novo, execute primeiro `supabase/migrations/202610280001_private_library.sql`. Depois execute `supabase/migrations/202610280002_library_friends.sql`. Se a biblioteca já estava configurada, execute **somente o arquivo 002**. Não execute novamente o 001 depois do 002: ele restaura políticas antigas. Não exige senhas ou chaves secretas no site.
-3. Entre com Google no site, abra **Livros → Adicionar livro**, selecione um PDF e informe título e autor opcional.
+3. Entre com Google no site, abra **Livros → Adicionar livro**, o modal permite selecionar um PDF e informar título e autor opcional. Ele fecha após salvar, mantém erros de validação dentro da janela e aceita fechamento por botão, Escape ou clique no fundo. Fechar durante o envio não cancela o upload em andamento.
 
 Cada conta tem sua própria estante e pode consultar as estantes de amigos aceitos. O envio é sempre para a própria conta. O bucket aceita PDFs de até 50 MiB em caminhos `<user-id>/<uuid>.pdf`; downloads são autorizados ao dono e a amigos aceitos somente para livros cadastrados. Amigos não recebem acesso de escrita aos arquivos ou metadados do dono. As políticas restritivas também impedem que políticas permissivas de outros buckets liberem esses arquivos. O bucket permanece privado. Sem a migração, a tela mostra falha de carregamento e não expõe dados.
 
@@ -83,9 +85,9 @@ O leitor usa o visualizador de PDF do navegador e oferece uma alternativa para a
 
 ### Amigos e progresso individual
 
-Em **Amigos & estantes → Adicionar amigo**, copie seu código e compartilhe manualmente com um amigo. Ele entra no próprio usuário, cola seu código e envia a solicitação. O destinatário precisa clicar em **Aceitar e compartilhar**. Até esse aceite, não há acesso aos livros. Convites cruzados não aceitam automaticamente a amizade. Não existe busca pública por usuários ou e-mails.
+Em **Amigos & estantes → Adicionar amigo**, um modal responsivo reúne seu código, o formulário de convite, solicitações e gerenciamento das amizades. Ele pode ser fechado pelo botão, por Escape ou pelo fundo; mantém o foco dentro da janela, devolve o foco ao botão de abertura e bloqueia a rolagem da página enquanto está aberto. Copie seu código e compartilhe manualmente com um amigo. Ele entra no próprio usuário, cola seu código e envia a solicitação. O destinatário precisa clicar em **Aceitar e compartilhar**. Até esse aceite, não há acesso aos livros. Convites cruzados não aceitam automaticamente a amizade. Não existe busca pública por usuários ou e-mails.
 
-Após aceitar, os dois podem abrir **Ver livros** para ler todos os PDFs atuais e futuros da estante do outro. **Minha estante** retorna aos próprios livros. A página deixa claro que status e contadores representam a leitura do usuário atual. **Remover** encerra o acesso para ambos; novos downloads e gravações são bloqueados imediatamente pelo banco. Ao retornar à aba, a lista de amizades é atualizada e uma estante que perdeu acesso é fechada. Conteúdo já baixado permanece sujeito à limitação descrita acima.
+Após aceitar, os dois podem abrir **Ver livros** para ler todos os PDFs atuais e futuros da estante do outro. **Minha estante** retorna aos próprios livros. Cada card e o leitor identificam o dono do PDF. O filtro **Estante** permite escolher a própria conta, um amigo ou **Todas as estantes**, combinando os livros autorizados. O filtro pode ser usado junto da busca e do status de leitura. Não exige migração adicional à 002. A página deixa claro que status e contadores representam a leitura do usuário atual. **Remover** encerra o acesso para ambos; novos downloads e gravações são bloqueados imediatamente pelo banco. Ao retornar à aba, a lista de amizades é atualizada e uma estante que perdeu acesso é fechada. Conteúdo já baixado permanece sujeito à limitação descrita acima.
 
 A migração 002 move o progresso para `library_reading_progress`, cuja chave é `(user_id, book_id)`. Ela preserva status e página dos livros existentes. As colunas antigas continuam na tabela apenas para compatibilidade da migração, mas não podem ser lidas pelo frontend, para impedir que amigos consultem o progresso do dono. Cada pessoa pode ler e gravar somente suas próprias marcações, inclusive em livros de amigos. Elas são preservadas após remover uma amizade, mas ficam inacessíveis enquanto o livro não estiver mais disponível.
 

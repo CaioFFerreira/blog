@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
 import { getSupabase } from '../supabase'
@@ -14,6 +14,60 @@ const friends = ref<LibraryFriend[]>([])
 const code = ref('')
 const friendCode = ref('')
 const expanded = ref(false)
+const friendDialog = ref<HTMLDialogElement>()
+const dialogTrigger = ref<HTMLButtonElement>()
+let previousOverflow = ''
+let scrollLocked = false
+
+async function openDialog() {
+  expanded.value = true
+  await nextTick()
+  if (!user.value || !friendDialog.value || friendDialog.value.open) return
+  friendDialog.value.showModal()
+  previousOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  scrollLocked = true
+}
+function releaseDialog() {
+  expanded.value = false
+  if (scrollLocked) {
+    document.body.style.overflow = previousOverflow
+    scrollLocked = false
+  }
+}
+function closeDialog() {
+  friendDialog.value?.close()
+  releaseDialog()
+}
+function onDialogClose() {
+  releaseDialog()
+  if (dialogTrigger.value?.isConnected) dialogTrigger.value.focus({ preventScroll: true })
+}
+function closeOnBackdrop(event: MouseEvent) {
+  if (event.target !== friendDialog.value) return
+  const bounds = friendDialog.value.getBoundingClientRect()
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog()
+}
+function visitFriend(friend: LibraryFriend) {
+  closeDialog()
+  emit('visit', friend)
+}
+function trapFocus(event: KeyboardEvent) {
+  if (event.key !== 'Tab' || !friendDialog.value?.open) return
+  const controls = Array.from(friendDialog.value.querySelectorAll<HTMLElement>(
+    'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]',
+  )).filter(element => element.tabIndex >= 0 && element.getClientRects().length > 0)
+  const first = controls[0]
+  const last = controls[controls.length - 1]
+  if (!first || !last) return
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
 const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
@@ -54,7 +108,7 @@ watch(() => user.value?.id, () => {
   error.value = ''
   busy.value = false
   loading.value = false
-  expanded.value = false
+  closeDialog()
   if (user.value) void refresh()
 }, { immediate: true })
 
@@ -101,27 +155,46 @@ async function copyCode() {
 }
 function onFocus() { if (user.value && !busy.value) void refresh() }
 onMounted(() => window.addEventListener('focus', onFocus))
-onUnmounted(() => { generation++; window.removeEventListener('focus', onFocus) })
+onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('focus', onFocus) })
 </script>
 
 <template>
   <section class="friends-panel" aria-label="Amigos da biblioteca">
-    <div class="friends-heading"><div><p class="eyebrow">LEITURAS EM BOA COMPANHIA</p><h2>Amigos & estantes <span>{{ accepted.length }}</span></h2></div><div class="friends-actions"><button type="button" :disabled="loading || busy" @click="refresh">Atualizar</button><button type="button" :aria-expanded="expanded" aria-controls="friends-settings" @click="expanded = !expanded">{{ expanded ? 'Fechar' : received ? `Convites recebidos (${received})` : 'Adicionar amigo' }} <span aria-hidden="true">{{ expanded ? '−' : '+' }}</span></button></div></div>
+    <div class="friends-heading"><div><p class="eyebrow">LEITURAS EM BOA COMPANHIA</p><h2>Amigos & estantes <span>{{ accepted.length }}</span></h2></div><div class="friends-actions"><button type="button" :disabled="loading || busy" @click="refresh">Atualizar</button><button ref="dialogTrigger" class="add-friend" type="button" aria-haspopup="dialog" aria-controls="friends-dialog" @click="openDialog">{{ received ? `Convites recebidos (${received})` : 'Adicionar amigo' }} <span aria-hidden="true">+</span></button></div></div>
     <p class="friends-caption">Após o aceite, vocês compartilham todos os livros atuais e futuros das duas estantes. Sua página e seu status de leitura continuam só seus.</p>
-    <div v-if="expanded" id="friends-settings" class="friends-settings">
+    <p v-if="loading && !expanded" class="friends-message" role="status">Atualizando amizades…</p>
+    <p v-if="error && !expanded" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
+    <p v-if="notice && !expanded" class="friends-message" role="status">{{ notice }}</p>
+    <dialog id="friends-dialog" ref="friendDialog" class="friends-dialog" aria-labelledby="friends-dialog-title" aria-describedby="friends-dialog-description" @cancel.prevent="closeDialog" @close="onDialogClose" @click="closeOnBackdrop" @keydown="trapFocus">
+      <div class="dialog-heading"><div><p class="eyebrow">BOAS LEITURAS, BOAS COMPANHIAS</p><h2 id="friends-dialog-title">Conecte suas estantes.</h2></div><button class="dialog-close" type="button" aria-label="Fechar janela de amigos" @click="closeDialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
+      <p id="friends-dialog-description" class="dialog-description">Compartilhe seu código ou envie uma solicitação. Após o aceite, os livros ficam disponíveis para ambos e o progresso continua individual.</p>
+    <div class="friends-settings">
       <label>Seu código de amizade<span class="invite-code"><input :value="code" readonly aria-label="Seu código de amizade" placeholder="Carregando código…" @focus="($event.target as HTMLInputElement).select()"><button type="button" :disabled="!code" @click="copyCode">Copiar</button></span><small>Compartilhe este código. Você decide quais solicitações aceitar.</small></label>
-      <form @submit.prevent="act('request')"><label>Código do seu amigo<input v-model="friendCode" maxlength="36" autocomplete="off" placeholder="Cole aqui o código recebido" required :disabled="busy"></label><button type="submit" :disabled="busy || !friendCode.trim()">Enviar solicitação</button></form>
+      <form @submit.prevent="act('request')"><label>Código do seu amigo<input v-model="friendCode" autofocus maxlength="36" autocomplete="off" placeholder="Cole aqui o código recebido" required :disabled="busy"></label><button type="submit" :disabled="busy || !friendCode.trim()">Enviar solicitação</button></form>
     </div>
-    <p v-if="loading" class="friends-message" role="status">Atualizando amizades…</p>
-    <p v-if="error" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
-    <p v-if="notice" class="friends-message" role="status">{{ notice }}</p>
-    <div v-if="expanded && pending.length" class="friend-requests"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
-    <div v-if="accepted.length" class="friend-list"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button><button v-if="expanded" type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
+
+      <p v-if="loading" class="friends-message" role="status">Atualizando amizades…</p>
+      <p v-if="error" class="friends-error" role="alert">{{ error }} <button type="button" :disabled="busy || loading" @click="refresh">Atualizar lista</button></p>
+      <p v-if="notice" class="friends-message" role="status">{{ notice }}</p>
+    <div v-if="pending.length" class="friend-requests"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
+
+      <div v-if="accepted.length" class="dialog-friends"><h3>Suas amizades</h3><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button type="button" :disabled="busy" @click="visitFriend(friend)">Ver livros ↗</button><button type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
+      <footer class="dialog-footer"><span>Você escolhe quais convites aceitar.</span><button type="button" @click="closeDialog">Concluir</button></footer>
+    </dialog>
+    <div v-if="accepted.length" class="friend-list"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button></div></div>
     <p v-else-if="!loading && !error" class="friends-empty">Uma boa leitura fica ainda melhor quando é compartilhada. Convide alguém para começar.</p>
   </section>
 </template>
 
 <style scoped>
+.friends-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 30px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 90px #0004; }
+.friends-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
+.dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dialog-heading h2 { font-size: clamp(25px, 5vw, 32px); margin: 10px 0; }
+.dialog-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; padding: 0; border-radius: 50%; }
+.dialog-description { max-width: 540px; color: var(--muted); font-size: 13px; line-height: 1.8; margin: 10px 0 24px; }
+.dialog-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); margin-top: 24px; padding-top: 18px; }
+.dialog-footer span { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .friends-panel { border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin: 0 0 30px; background: var(--surface); }
 .friends-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .friends-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -130,9 +203,12 @@ h2 > span { font: 11px var(--mono); color: var(--muted); margin-left: 8px; }
 .friends-caption, .friends-empty { font-size: 12px; color: var(--muted); line-height: 1.8; }
 .friends-caption { margin: 12px 0 20px; max-width: 650px; }
 .friends-empty { margin-bottom: 0; }
-button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; color: var(--green); background: var(--paper); font: 500 12px 'DM Sans', sans-serif; cursor: pointer; }
+button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; color: var(--green); background: var(--paper); font: 500 12px var(--font-sans); cursor: pointer; }
 button:disabled { opacity: .5; cursor: wait; }
-.friends-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; border-top: 1px solid var(--line); padding: 22px 0; }
+.friends-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 0 0 8px; }
+.friends-settings > label, .friends-settings > form { padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.friends-settings form button { width: 100%; }
+.add-friend { background: var(--green); color: var(--paper); border-color: var(--green); }
 label { display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: var(--muted); min-width: 0; }
 label small { font-size: 11px; line-height: 1.6; }
 input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font: 12px var(--mono); }
@@ -150,5 +226,5 @@ h3 { font: 500 12px var(--display); color: var(--muted); }
 .friend-name strong { color: var(--ink); font-size: 13px; font-weight: 500; }
 .friend-name small { color: var(--muted); font-size: 11px; }
 .visit-friend { margin-left: auto; }
-@media (max-width: 640px) { .friends-settings { grid-template-columns: 1fr; } .friends-heading { align-items: flex-start; flex-direction: column; } .friends-panel { padding: 20px; } .friends-heading button { width: 100%; } }
+@media (max-width: 640px) { .friends-dialog { padding: 20px; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 12px; } .friends-dialog input { font-size: 16px; } .friends-settings > label, .friends-settings > form { padding: 16px; } .friends-settings { grid-template-columns: 1fr; } .friends-heading { align-items: flex-start; flex-direction: column; } .friends-panel { padding: 20px; } .friends-heading button { width: 100%; } }
 </style>
