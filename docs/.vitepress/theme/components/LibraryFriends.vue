@@ -48,10 +48,6 @@ function closeOnBackdrop(event: MouseEvent) {
   const bounds = friendDialog.value.getBoundingClientRect()
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog()
 }
-function visitFriend(friend: LibraryFriend) {
-  closeDialog()
-  emit('visit', friend)
-}
 function trapFocus(event: KeyboardEvent) {
   if (event.key !== 'Tab' || !friendDialog.value?.open) return
   const controls = Array.from(friendDialog.value.querySelectorAll<HTMLElement>(
@@ -119,7 +115,7 @@ async function act(operation: 'request' | 'accept' | 'remove', friend?: LibraryF
     return
   }
   if (operation === 'remove' && friend?.status === 'accepted'
-    && !window.confirm(`Remover a amizade com ${friend.display_name}? Vocês deixarão de acessar os livros um do outro.`)) return
+    && !window.confirm(`Remover a amizade com ${friend.display_name}? Vocês deixarão de acessar os livros compartilhados um do outro.`)) return
   const owner = user.value.id
   const ticket = generation
   busy.value = true
@@ -179,10 +175,9 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
       <p v-if="notice" class="friends-message" role="status">{{ notice }}</p>
     <div v-if="pending.length" class="friend-requests friends-scroll" tabindex="0" role="region" aria-label="Solicitações de amizade"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button class="accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button type="button" :disabled="busy" @click="act('remove', friend)">Recusar</button></template><button v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar</button></div></div>
 
-      <div v-if="accepted.length" class="dialog-friends friends-scroll" tabindex="0" role="region" aria-label="Gerenciar amizades"><h3>Suas amizades</h3><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button type="button" :disabled="busy" @click="visitFriend(friend)">Ver livros ↗</button><button type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
       <footer class="dialog-footer"><span>Você escolhe quais convites aceitar.</span><button type="button" @click="closeDialog">Concluir</button></footer>
     </dialog>
-    <div v-if="accepted.length" class="friend-list friends-scroll" tabindex="0" role="region" aria-label="Estantes dos amigos"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button></div></div>
+    <div v-if="accepted.length" class="friend-list friends-scroll" tabindex="0" role="region" aria-label="Estantes dos amigos"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div><button class="visit-friend" type="button" :disabled="busy" @click="emit('visit', friend)">Ver livros ↗</button><button class="remove-friend" type="button" :disabled="busy" :aria-label="`Remover amizade com ${friend.display_name}`" @click="act('remove', friend)">Remover</button></div></div>
     <p v-else-if="!loading && !error" class="friends-empty">Uma boa leitura fica ainda melhor quando é compartilhada. Convide alguém para começar.</p>
   </section>
 </template>
@@ -196,6 +191,9 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
 .dialog-description { max-width: 540px; color: var(--muted); font-size: 13px; line-height: 1.8; margin: 10px 0 24px; }
 .dialog-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); margin-top: 24px; padding-top: 18px; }
 .dialog-footer span { color: var(--muted); font-size: 11px; line-height: 1.6; }
+.remove-friend { color: #a32f32; border-color: #a32f3266; background: #a32f320a; }
+.remove-friend:hover:not(:disabled) { background: #a32f321a; }
+:global(.dark) .remove-friend { color: #f3a3a3; border-color: #f3a3a366; background: #f3a3a30a; }
 .friends-panel { border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin: 0 0 30px; background: var(--surface); }
 .friends-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .friends-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
