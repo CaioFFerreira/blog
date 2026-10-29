@@ -75,6 +75,7 @@ onUnmounted(() => { disposed = true; revision++; dialog.value?.close(); release(
 .base-modal :deep(.modal-header h2) { margin: 8px 0; font: 500 24px/1.25 var(--display); letter-spacing: -.03em; overflow-wrap: anywhere; }
 .base-modal :deep(.modal-body) { flex: 1 1 auto; min-height: 0; padding: 20px 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .base-modal :deep(.modal-footer) { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; flex-shrink: 0; margin: 0; padding: 16px 24px; border-top: 1px solid var(--line); }
+.base-modal :deep(.modal-footer > .ui-action[data-action="primary"]) { margin-left: auto; }
 .base-modal :deep(.modal-footer > span) { color: var(--muted); font: 11px/1.6 var(--font-sans); }
 .base-modal-compact { width: fit-content; padding: 24px; text-align: center; font: 14px/1.6 var(--font-sans); }
 .base-modal-compact[open] { align-items: center; justify-content: center; }

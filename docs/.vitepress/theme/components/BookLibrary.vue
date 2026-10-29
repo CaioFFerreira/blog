@@ -70,7 +70,6 @@ const shelfOwner = computed(() => ownerFilter.value === 'all' ? undefined : sele
 function bookOwnerName(ownerId: string) {
   return ownerId === uid.value ? `${accountName.value} (você)` : friends.value.find(friend => friend.other_id === ownerId)?.display_name ?? 'Amigo'
 }
-const firstName = computed(() => accountName.value.split(' ')[0])
 const filters: { value: ReadingStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' }, { value: 'want_read', label: 'Quero ler' },
   { value: 'reading', label: 'Lendo' }, { value: 'read', label: 'Lidos' },
@@ -415,17 +414,16 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
 <template>
   <section v-if="!ready" class="library-gate" aria-live="polite" aria-busy="true">
     <span class="library-symbol" aria-hidden="true">◷</span>
-    <p class="eyebrow">UM INSTANTE</p><h1>Preparando seu espaço.</h1><p>Estamos verificando sua conta.</p>
+    <h1>Verificando sua conta…</h1>
   </section>
   <section v-else-if="!user" class="library-gate">
     <div class="gate-art" aria-hidden="true"><span></span><span></span><span></span><b>⌑</b></div>
-    <p class="eyebrow">UM ESPAÇO SÓ SEU</p>
+
     <h1>Boas leituras<br>começam <em>aqui.</em></h1>
-    <p>Guarde seus livros, retome de onde parou e acompanhe cada leitura. Entre na sua conta para abrir sua biblioteca privada.</p>
+    <p>Entre para acessar seus livros e salvar sua leitura.</p>
     <button data-action="primary" class="ui-action library-primary" type="button" :disabled="authBusy" @click="signIn('/livros.html')">
       <span class="google-letter action-icon" aria-hidden="true">G</span>{{ authBusy ? 'Entrando…' : 'Entrar com Google' }}
     </button>
-    <small>Seus livros e suas marcações ficam na sua conta.</small>
     <a :href="withBase('/')">← Voltar aos artigos</a>
   </section>
   <section v-else class="book-library">
@@ -441,27 +439,26 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     </section>
     <section v-show="activeTab === 'books'" id="library-panel-books" role="tabpanel" aria-labelledby="library-tab-books" tabindex="0">
     <header class="library-intro">
-      <div><p class="eyebrow">{{ selectedFriend ? 'UMA ESTANTE AMIGA' : 'SEU PRÓXIMO CAPÍTULO' }}</p><h1 v-if="selectedFriend">Estante de <em>{{ selectedFriend.display_name }}.</em></h1><h1 v-else-if="ownerFilter === 'all'">Todas as estantes, <em>boas leituras.</em></h1><h1 v-else>Sua estante, <em>seu ritmo.</em></h1><p>{{ selectedFriend ? 'Explore os livros do seu amigo. As páginas salvas e os status abaixo são seus, sem alterar a leitura dele.' : `Olá, ${firstName}. Que tal reservar um tempo para uma boa leitura?` }}</p></div>
+      <div><h1 v-if="selectedFriend">Estante de <em>{{ selectedFriend.display_name }}</em></h1><h1 v-else-if="ownerFilter === 'all'">Todas as estantes</h1><h1 v-else>Minha estante</h1></div>
       <button data-action="open" v-if="!selectedFriend" class="ui-action library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span class="action-icon" aria-hidden="true">+</span>Adicionar livro</button>
     </header>
-    <div v-if="selectedFriend" class="shared-shelf-note"><span>Compartilhada por {{ selectedFriend.display_name }} · Seu progresso é individual.</span><button data-action="navigate" class="ui-action library-secondary" type="button" @click="visitShelf(null)"><span class="action-icon" aria-hidden="true">←</span>Minha estante</button></div>
+    <div v-if="selectedFriend" class="shared-shelf-note"><span>Seu progresso é individual.</span><button data-action="navigate" class="ui-action library-secondary" type="button" @click="visitShelf(null)"><span class="action-icon" aria-hidden="true">←</span>Minha estante</button></div>
     <div class="library-stats" aria-label="Resumo da biblioteca">
-      <div><span>NA ESTANTE</span><strong>{{ counts.all.toString().padStart(2, '0') }}</strong><small>livros para explorar</small></div>
-      <div><span>EM ANDAMENTO</span><strong>{{ counts.reading.toString().padStart(2, '0') }}</strong><small>capítulos acontecendo</small></div>
-      <div><span>CONCLUÍDOS</span><strong>{{ counts.read.toString().padStart(2, '0') }}</strong><small>histórias que ficam</small></div>
-      <p>Uma página de cada vez.<br><em>O importante é continuar.</em><span aria-hidden="true">✳</span></p>
+      <div><span>NA ESTANTE</span><strong>{{ counts.all.toString().padStart(2, '0') }}</strong></div>
+      <div><span>EM ANDAMENTO</span><strong>{{ counts.reading.toString().padStart(2, '0') }}</strong></div>
+      <div><span>CONCLUÍDOS</span><strong>{{ counts.read.toString().padStart(2, '0') }}</strong></div>
     </div>
     <BaseModal v-if="!selectedFriend" v-model="showUpload" id="upload-book" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description">
     <form class="library-upload modal-form" @submit.prevent="uploadBook">
-      <ModalHeader class="upload-modal-heading" close-label="Fechar janela de adicionar livro" @close="closeUpload"><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></ModalHeader>
+      <ModalHeader class="upload-modal-heading" close-label="Fechar janela de adicionar livro" @close="closeUpload"><h2 id="upload-title">Adicionar livro</h2></ModalHeader>
       <div class="upload-modal-body modal-body">
-      <p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
+      <p id="upload-description">PDF de até 50 MB.</p>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
       <div class="upload-fields"><label>Título<input v-model="title" autofocus maxlength="200" required :disabled="uploading" placeholder="Como se chama o livro?"></label><label><span class="upload-label-heading">Autor <small>(opcional)</small></span><input v-model="author" maxlength="200" :disabled="uploading" placeholder="Quem escreveu?"></label></div>
-      <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Apenas seus amigos aceitos. Exige login.</small></span></label></fieldset>
+      <fieldset class="upload-privacy" :disabled="uploading"><legend>Quem pode ler este livro?</legend><label><input v-model="uploadVisibility" type="radio" value="private"><span><strong>Privado</strong><small>Somente você pode ver e ler.</small></span></label><label><input v-model="uploadVisibility" type="radio" value="friends"><span><strong>Compartilhado com amigos</strong><small>Disponível para seus amigos aceitos.</small></span></label></fieldset>
       <ToastNotice v-if="showUpload" :model-value="error" kind="error" />
       </div>
-      <div class="upload-actions modal-footer"><button data-action="primary" class="ui-action library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button><button data-action="ghost" class="ui-action library-secondary" type="button" @click="closeUpload">{{ uploading ? 'Fechar' : 'Cancelar' }}</button></div>
+      <div class="upload-actions modal-footer"><button data-action="primary" class="ui-action library-primary" type="submit" :disabled="uploading || !file">{{ uploading ? 'Enviando PDF…' : 'Guardar na biblioteca' }}</button></div>
     </form>
     </BaseModal>
     <ToastNotice v-if="!showUpload && !activeBook" :model-value="error" kind="error" />
@@ -484,8 +481,8 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
       <div class="reading-filter"><span class="filter-label">Sua leitura</span><div class="library-filters" role="group" aria-label="Filtrar por leitura"><button v-for="item in filters" :key="item.value" type="button" :aria-pressed="filter === item.value" @click="filter = item.value">{{ item.label }}<span>{{ counts[item.value] }}</span></button></div></div>
       <label class="library-search"><span class="filter-label">Buscar livro</span><span class="search-input"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg><input v-model="search" type="search" aria-label="Buscar livros por título ou autor" placeholder="Título ou autor…"></span></label>
     </div>
-    <p v-if="loading" class="library-empty" role="status">Buscando suas próximas leituras…</p>
-    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>{{ selectedFriend ? 'Esta estante ainda não tem livros.' : 'Sua estante começa com um livro.' }}</h2><p>{{ selectedFriend ? 'Quando seu amigo adicionar um PDF, ele aparecerá aqui para você.' : 'Adicione seu primeiro PDF e encontre aqui um cantinho para ler no seu ritmo.' }}</p><button data-action="open" v-if="!selectedFriend" class="ui-action library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span class="action-icon" aria-hidden="true">+</span>Adicionar meu primeiro livro</button></div>
+    <p v-if="loading" class="library-empty" role="status">Carregando livros…</p>
+    <div v-else-if="!books.length && !error" class="library-empty"><span aria-hidden="true">▤</span><h2>{{ selectedFriend ? 'Nenhum livro compartilhado.' : 'Sua estante está vazia.' }}</h2><button data-action="open" v-if="!selectedFriend" class="ui-action library-primary" type="button" aria-haspopup="dialog" aria-controls="upload-book" @click="openUpload"><span class="action-icon" aria-hidden="true">+</span>Adicionar livro</button></div>
     <div v-else-if="!filtered.length && !error" class="library-empty"><h2>Nenhum livro por aqui.</h2><p>Experimente outro título, autor ou filtro de leitura.</p><button data-action="ghost" class="ui-action library-secondary" type="button" @click="search = ''; filter = 'all'">Limpar filtros</button></div>
     <div v-else class="books-grid">
       <article v-for="(book, index) in visibleBooks" :key="book.id" class="book-card">
@@ -501,7 +498,7 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
       </article>
     </div>
     <button data-action="ghost" v-if="visibleCount < filtered.length" class="ui-action library-secondary load-more" type="button" @click="visibleCount += 12">Mostrar mais livros</button>
-    <footer class="library-footer"><span>SEU ESPAÇO PARA LER E DESCOBRIR.</span><span>{{ filtered.length }} {{ filtered.length === 1 ? 'livro' : 'livros' }} na seleção</span></footer>
+    <footer class="library-footer"><span>{{ filtered.length }} {{ filtered.length === 1 ? 'livro' : 'livros' }} na seleção</span></footer>
     </section>
   </section>
 </template>
@@ -551,14 +548,11 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
 .library-primary { background: var(--green); color: var(--paper); }
 .library-secondary { background: var(--surface); color: var(--green); }
 button:disabled { opacity: .55; cursor: default; }
-.library-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; border: 1px solid var(--line); border-radius: 0; background: var(--surface); margin-bottom: 34px; overflow: hidden; }
+.library-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 0; background: var(--surface); margin-bottom: 34px; overflow: hidden; }
 .library-stats > div { padding: 24px; border-right: 1px solid var(--line); display: grid; gap: 8px; }
+.library-stats > div:last-child { border-right: 0; }
 .library-stats div > span { color: var(--muted); font: 9px var(--mono); letter-spacing: .08em; }
 .library-stats strong { color: var(--green); font: 400 38px var(--display); letter-spacing: -.04em; }
-.library-stats small { font-size: 11px; color: var(--muted); }
-.library-stats > p { position: relative; padding: 20px 30px; margin: 0; display: flex; justify-content: center; flex-direction: column; color: var(--muted); font-size: 13px; line-height: 1.9; }
-.library-stats em { color: var(--green); font-style: normal; }
-.library-stats p > span { position: absolute; right: 25px; bottom: 14px; font-size: 42px; opacity: .25; }
 .library-toolbar { display: grid; grid-template-columns: minmax(190px, .85fr) minmax(350px, 1.6fr) minmax(220px, 1fr); gap: 22px; align-items: end; padding: 22px; margin: 30px 0; border: 1px solid var(--line); border-radius: 0; background: var(--surface); box-shadow: 0 3px 12px #00000003; }
 .filter-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: .01em; line-height: 1.4; }
 .shelf-filter, .reading-filter, .library-search { min-width: 0; }
@@ -637,8 +631,8 @@ button:disabled { opacity: .55; cursor: default; }
 .gate-art > span:nth-child(2) { height: 122px; background: #c7baa0; }
 .gate-art > span:nth-child(3) { height: 110px; background: #913f32; transform: rotate(12deg); transform-origin: bottom; margin-left: 8px; }
 .gate-art b { position: absolute; right: 6px; bottom: -14px; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--green); width: 45px; height: 45px; display: grid; place-items: center; font-size: 24px; }
-@media (max-width: 1000px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } .library-stats > p { padding-inline: 20px; } }
-@media (max-width: 760px) { .books-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .library-stats { grid-template-columns: repeat(3, 1fr); } .library-stats > p { display: none; } .library-stats > div:last-of-type { border: 0; } .library-intro { align-items: flex-start; flex-direction: column; padding-top: 32px; } .library-account { flex-wrap: wrap; } .library-search { width: 100%; } .library-search input { width: 100%; } }
+@media (max-width: 1000px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+@media (max-width: 760px) { .books-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .library-stats { grid-template-columns: repeat(3, 1fr); } .library-stats > div:last-of-type { border: 0; } .library-intro { align-items: flex-start; flex-direction: column; padding-top: 32px; } .library-account { flex-wrap: wrap; } .library-search { width: 100%; } .library-search input { width: 100%; } }
 @media (max-width: 480px) { .books-grid { grid-template-columns: 1fr; gap: 24px; } .book-card { display: flex; flex-direction: column; } .book-cover { aspect-ratio: auto; min-height: 230px; padding: 24px; gap: 12px; border-left-width: 6px; } .cover-title { -webkit-line-clamp: 4; } .book-details { padding: 20px; } .book-page { min-height: auto; margin-bottom: 18px; } .book-read { min-height: 48px; padding-inline: 14px; } .library-stats > div { padding: 16px 10px; } .upload-fields { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .book-card { transition: none; } }
 </style>

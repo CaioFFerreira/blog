@@ -287,7 +287,6 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
         </div></article></div>
       <button data-action="ghost" v-if="more" class="ui-action comments-more" type="button" :disabled="loading || mutating || !!reacting" @click="load(true)">Mostrar mais comentários</button>
       </div>
-      <footer class="comments-footer modal-footer"><span>Se o livro ficar privado, os amigos perdem acesso a esta conversa.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
     </BaseModal>
   </div>
 </template>

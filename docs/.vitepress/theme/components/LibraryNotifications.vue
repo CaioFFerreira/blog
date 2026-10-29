@@ -140,7 +140,6 @@ onUnmounted(() => {
         <ul v-if="items.length"><li v-for="item in items" :key="item.id"><button class="notification-item" :class="{ unread: !item.read_at }" type="button" :disabled="busy || loading" @click="markRead(item)"><span class="notification-indicator" aria-hidden="true"></span><span><strong>{{ item.display_name }}</strong> comentou em <strong>{{ item.book_title }}</strong><span class="notification-meta">Página {{ item.page_number }} · {{ formatDate(item.created_at) }}{{ !item.read_at ? ' · Não lida' : '' }}</span></span><span aria-hidden="true">→</span></button></li></ul>
         <button data-action="ghost" class="ui-action" v-if="more" type="button" :disabled="busy || loading" @click="load(true)">Mostrar mais notificações</button>
       </div>
-      <footer class="modal-footer"><span>Somente notificações dos seus livros.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
     </BaseModal>
     </Teleport>
   </div>

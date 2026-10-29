@@ -120,17 +120,17 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
     <RequestLoading :message="busy ? 'Atualizando amizade…' : loading ? 'Carregando amizades…' : ''" />
     <div class="friends-actions"><button data-action="ghost" class="ui-action" type="button" :disabled="loading || busy" @click="refresh()"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button><button data-action="open" class="ui-action add-friend" type="button" aria-haspopup="dialog" aria-controls="friends-dialog" @click="openDialog"><span class="action-icon" aria-hidden="true">+</span>{{ received ? `Convites recebidos (${received})` : 'Adicionar amigo' }}</button></div>
     <div class="friends-panel">
-    <header class="friends-heading"><p class="eyebrow">LEITURAS EM BOA COMPANHIA</p><h2>Amigos & estantes <span>{{ accepted.length }}</span></h2></header>
-    <p class="friends-caption">Após o aceite, vocês acessam os livros marcados como compartilhados nas duas estantes. Livros privados continuam só com o dono. Sua página e seu status de leitura continuam só seus.</p>
+    <header class="friends-heading"><h2>Amigos <span>{{ accepted.length }}</span></h2></header>
+    <p class="friends-caption">Amigos podem ler seus livros compartilhados. Livros privados e progresso continuam individuais.</p>
     <p v-if="loading && !expanded" class="friends-message" role="status">Atualizando amizades…</p>
     <ToastNotice v-if="!expanded" :model-value="error" kind="error" />
     <ToastNotice v-if="!expanded" v-model="notice" />
     <BaseModal v-model="expanded" id="friends-dialog" class="friends-dialog" aria-labelledby="friends-dialog-title" aria-describedby="friends-dialog-description">
-      <ModalHeader class="dialog-heading" close-label="Fechar janela de amigos" @close="closeDialog"><p class="eyebrow">BOAS LEITURAS, BOAS COMPANHIAS</p><h2 id="friends-dialog-title">Conecte suas estantes.</h2></ModalHeader>
+      <ModalHeader class="dialog-heading" close-label="Fechar janela de amigos" @close="closeDialog"><h2 id="friends-dialog-title">Adicionar amigo</h2></ModalHeader>
       <div class="friends-modal-body modal-body">
-      <p id="friends-dialog-description" class="dialog-description">Compartilhe seu código ou envie uma solicitação. Após o aceite, os livros compartilhados ficam disponíveis para ambos. Livros privados e progresso de leitura continuam individuais.</p>
+      <p id="friends-dialog-description" class="dialog-description">Compartilhe seu código ou use o código de um amigo para enviar um convite.</p>
     <div class="friends-settings">
-      <label>Seu código de amizade<span class="invite-code"><input :value="code" readonly aria-label="Seu código de amizade" placeholder="Carregando código…" @focus="($event.target as HTMLInputElement).select()"><button data-action="ghost" class="ui-action" type="button" :disabled="!code" @click="copyCode">Copiar</button></span><small>Compartilhe este código. Você decide quais solicitações aceitar.</small></label>
+      <label>Seu código de amizade<span class="invite-code"><input :value="code" readonly aria-label="Seu código de amizade" placeholder="Carregando código…" @focus="($event.target as HTMLInputElement).select()"><button data-action="ghost" class="ui-action" type="button" :disabled="!code" @click="copyCode">Copiar</button></span></label>
       <form @submit.prevent="act('request')"><label>Código do seu amigo<input v-model="friendCode" autofocus maxlength="36" autocomplete="off" placeholder="Cole aqui o código recebido" required :disabled="busy"></label><button data-action="primary" class="ui-action" type="submit" :disabled="busy || !friendCode.trim()">Enviar solicitação</button></form>
     </div>
 
@@ -140,13 +140,12 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
     <div v-if="pending.length" class="friend-requests friends-scroll" tabindex="0" role="region" aria-label="Solicitações de amizade"><h3>Solicitações</h3><div v-for="friend in pending" :key="friend.friendship_id" class="friend-row"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>{{ friend.direction === 'received' ? 'Quer compartilhar estantes com você' : 'Aguardando aceite' }}</small></div><template v-if="friend.direction === 'received'"><button data-action="primary" class="ui-action accept-friend" type="button" :disabled="busy" @click="act('accept', friend)">Aceitar e compartilhar</button><button data-action="danger" class="ui-action" type="button" :disabled="busy" @click="act('remove', friend)">Recusar convite</button></template><button data-action="danger" class="ui-action" v-else type="button" :disabled="busy" @click="act('remove', friend)">Cancelar convite</button></div></div>
 
       </div>
-      <footer class="dialog-footer modal-footer"><span>Você escolhe quais convites aceitar.</span><button data-action="ghost" class="ui-action" type="button" @click="closeDialog">Fechar</button></footer>
     </BaseModal>
-    <div v-if="accepted.length" class="friend-list friends-scroll" tabindex="0" role="region" aria-label="Estantes dos amigos"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><div class="friend-identity"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong><small>Estante compartilhada</small></div></div><ActionDropdown :menu-id="`friend-actions-${friend.friendship_id}`" :label="`Opções da amizade com ${friend.display_name}`" menu-label="Ações da amizade" :disabled="busy || loading" :actions="[
+    <div v-if="accepted.length" class="friend-list friends-scroll" tabindex="0" role="region" aria-label="Estantes dos amigos"><div v-for="friend in accepted" :key="friend.friendship_id" class="friend-row"><div class="friend-identity"><span class="friend-avatar" aria-hidden="true">{{ friend.display_name.slice(0, 1).toUpperCase() }}</span><div class="friend-name"><strong>{{ friend.display_name }}</strong></div></div><ActionDropdown :menu-id="`friend-actions-${friend.friendship_id}`" :label="`Opções da amizade com ${friend.display_name}`" menu-label="Ações da amizade" :disabled="busy || loading" :actions="[
       { id: 'visit', label: 'Ver livros', kind: 'navigate', icon: 'books' },
       { id: 'remove', label: 'Remover', ariaLabel: `Remover amizade com ${friend.display_name}`, kind: 'danger-ghost', icon: 'delete' },
     ]" @select="action => action === 'visit' ? emit('visit', friend) : act('remove', friend)" /></div></div>
-    <p v-else-if="!loading && !error" class="friends-empty">Uma boa leitura fica ainda melhor quando é compartilhada. Convide alguém para começar.</p>
+    <p v-else-if="!loading && !error" class="friends-empty">Nenhum amigo adicionado.</p>
     </div>
   </section>
 </template>
