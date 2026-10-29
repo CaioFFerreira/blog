@@ -52,10 +52,10 @@ onUnmounted(() => {
 
 <template>
   <header class="topbar" @keydown="onKeydown">
-    <a class="wordmark" :href="withBase('/')" aria-label="Caio Front-end Notes, início" @click="closeNavigation()">
-      <span class="wordmark-mark">c<span>.</span></span>
-    </a>
     <div class="header-tools">
+    <button ref="menuButton" class="menu-toggle" type="button" aria-label="Menu de navegação" aria-controls="main-navigation" :aria-expanded="menuOpen" @click="toggleNavigation()" @keydown.down.prevent="toggleNavigation(true)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path :d="menuOpen ? 'm6 6 12 12M6 18 18 6' : 'M4 6h16M4 12h16M4 18h16'" /></svg>
+    </button>
     <nav id="main-navigation" ref="navigation" class="header-actions" :popover="mobile ? 'auto' : undefined" :style="mobile ? position : undefined" aria-label="Navegação principal" @toggle="onToggle">
       <a :href="withBase('/')" @click="closeNavigation()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9" /></svg>Início</a>
       <a :href="withBase('/#artigos')" @click="closeNavigation()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 3h10l4 4v14H5V3Zm10 0v5h4M8 12h8m-8 4h8" /></svg>Artigos</a>
@@ -63,9 +63,6 @@ onUnmounted(() => {
       <FocusAudio />
     </nav>
     <div class="header-account" @click="closeNavigation()"><GoogleLogin /></div>
-    <button ref="menuButton" class="menu-toggle" type="button" aria-label="Menu de navegação" aria-controls="main-navigation" :aria-expanded="menuOpen" @click="toggleNavigation()" @keydown.down.prevent="toggleNavigation(true)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path :d="menuOpen ? 'm6 6 12 12M6 18 18 6' : 'M4 6h16M4 12h16M4 18h16'" /></svg>
-    </button>
     </div>
   </header>
 </template>

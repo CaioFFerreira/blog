@@ -27,11 +27,8 @@ button, input, select, textarea { font: inherit; }
 .focus-audio-state { color: var(--muted); font-size: 11px; }
 .focus-audio-error { color: var(--orange); font-size: 12px; line-height: 1.6; }
 .topbar { position: sticky; top: 0; z-index: 40; background: var(--paper); min-height: 78px; padding: 18px max(var(--page-gutter), calc((100% - 1180px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
-.wordmark { min-width: 0; display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.wordmark-mark { font: 700 38px/1 var(--display); }
-.wordmark-mark span { color: var(--orange); }
 .header-actions { display: flex; gap: 24px; align-items: center; font-size: 13px; }
-.header-tools { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.header-tools { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 24px; min-width: 0; }
 .header-account { min-width: 0; }
 .menu-toggle { display: none; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--green); font: inherit; cursor: pointer; }
 .header-actions a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--muted); text-decoration: none; }
@@ -194,8 +191,8 @@ h1 em { font-style: normal; color: var(--green); }
 
 @media (max-width: 900px) {
   .topbar { gap: 12px; padding-block: 12px; flex-wrap: nowrap; }
-  .header-tools { gap: 8px; min-width: 0; }
-  .header-account { padding-right: 12px; border-right: 1px solid var(--line); }
+  .header-tools { width: 100%; justify-content: space-between; gap: 8px; min-width: 0; }
+  .header-account { margin-left: auto; }
   .menu-toggle { display: inline-flex; flex-shrink: 0; width: 44px; padding: 0; }
   .header-actions { display: none; position: fixed; inset: auto; box-sizing: border-box; width: min(260px, calc(100vw - 32px)); max-height: calc(100dvh - 100px); margin: 0; padding: 6px; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 10px 36px #0003; overflow-y: auto; overscroll-behavior: contain; }
   .header-actions:popover-open { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }

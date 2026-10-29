@@ -514,6 +514,11 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
 .reader-footer :deep(.page-comments) { flex: 1; min-width: 0; padding: 0; border: 0; }
 .reader-footer :deep(.comments-trigger) { max-width: 100%; text-align: left; justify-content: flex-start; }
 .reader-save { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 640px) {
+  .library-reader :deep(.reader-footer.modal-footer) { flex-direction: column; align-items: stretch; }
+  .reader-footer :deep(.page-comments), .reader-footer :deep(.comments-trigger), .reader-save { width: 100%; }
+  .reader-save { margin-left: 0; }
+}
 
 .book-delete { width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent); border-radius: 0; background: transparent; color: var(--orange); font: 500 12px var(--font-sans); cursor: pointer; }
 .book-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--orange) 10%, transparent); }

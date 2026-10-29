@@ -93,7 +93,7 @@ button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .account-dropdown button > span { display: inline-grid; place-items: center; width: 18px; font-size: 20px; }
 @media (max-width: 900px) {
   .google-login { padding-left: 0; border-left: 0; gap: 8px; }
-  .account-trigger { gap: 6px; padding: 4px; }
-  .account-name { max-width: clamp(40px, calc(100vw - 230px), 150px); }
+  .account-trigger { max-width: 100%; gap: 6px; padding: 4px; }
+  .account-name { min-width: 0; max-width: none; }
 }
 </style>
