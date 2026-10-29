@@ -71,7 +71,7 @@ onUnmounted(() => { disposed = true; revision++; dialog.value?.close(); release(
 .base-modal-fullscreen[open] { inset: 0; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; }
 .base-modal::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
 .base-modal :deep(.modal-form) { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; min-height: 0; max-height: inherit; margin: 0; padding: 0; overflow: hidden; }
-.base-modal :deep(.modal-header) { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-shrink: 0; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.base-modal :deep(.modal-header) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; flex-shrink: 0; padding: 20px 24px; border-bottom: 1px solid var(--line); }
 .base-modal :deep(.modal-header h2) { margin: 8px 0; font: 500 24px/1.25 var(--display); letter-spacing: -.03em; overflow-wrap: anywhere; }
 .base-modal :deep(.modal-body) { flex: 1 1 auto; min-height: 0; padding: 20px 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .base-modal :deep(.modal-footer) { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; flex-shrink: 0; margin: 0; padding: 16px 24px; border-top: 1px solid var(--line); }

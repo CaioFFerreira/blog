@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
+import ModalHeader from './ModalHeader.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import { useAuth } from '../composables/useAuth'
@@ -12,8 +13,10 @@ interface Notification {
   book_title: string; display_name: string; created_at: string; read_at: string | null
 }
 const { user } = useAuth()
+const emit = defineEmits<{ 'unread-change': [count: number]; opened: []; closed: [] }>()
 const expanded = ref(false)
 const unread = ref(0)
+watch(unread, count => emit('unread-change', count), { immediate: true })
 const counting = ref(false)
 const loading = ref(false)
 const busy = ref(false)
@@ -60,7 +63,11 @@ async function load(append = false) {
     if (ticket === version && !disposed) error.value = 'Não foi possível carregar as notificações. Tente atualizar. Confira se a migração 007 foi aplicada.'
   } finally { if (ticket === version) loading.value = false }
 }
-function open() { if (user.value && !disposed) expanded.value = true }
+function open() {
+  if (!user.value || disposed) return
+  emit('opened')
+  expanded.value = true
+}
 function close() { expanded.value = false }
 async function markRead(item?: Notification) {
   const owner = user.value?.id
@@ -115,17 +122,16 @@ onUnmounted(() => {
 
 <template>
   <div v-if="user" class="library-notifications">
-    <button data-action="open" class="ui-action notification-bell" type="button" :aria-label="`Notificações${unread ? `, ${unread} não lidas` : ''}`" :aria-busy="counting" aria-haspopup="dialog" aria-controls="notifications-dialog" @click="open">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
-      <span v-if="unread" class="notification-count">{{ unread > 99 ? '99+' : unread }}</span>
-      <span v-else-if="counting" class="notification-counting" aria-hidden="true">…</span>
+    <button data-action="ghost" class="ui-action notification-menu-item" type="button" :aria-label="`Notificações${unread ? `, ${unread} não lidas` : ''}`" :aria-busy="counting" aria-haspopup="dialog" aria-controls="notifications-dialog" @click="open">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h16v16H4zM8 9h8m-8 5h5" /></svg>
+      <span>Notificações</span><span v-if="unread" class="notification-count" aria-hidden="true">{{ unread > 99 ? '99+' : unread }}</span>
     </button>
     <Teleport to="body">
     <RequestLoading :message="busy ? 'Atualizando notificações…' : loading ? 'Carregando notificações…' : ''" />
     <ToastNotice v-if="!expanded" :model-value="error" kind="error" />
     <ToastNotice v-if="!expanded" v-model="notice" />
-    <BaseModal v-model="expanded" id="notifications-dialog" class="notifications-dialog" aria-labelledby="notifications-title" @opened="load()">
-      <header class="modal-header"><h2 id="notifications-title">Notificações <small v-if="unread">{{ unread }} não lidas</small></h2><button data-action="ghost" class="ui-action" type="button" aria-label="Fechar notificações" @click="close"><span class="action-icon" aria-hidden="true">×</span></button></header>
+    <BaseModal v-model="expanded" id="notifications-dialog" class="notifications-dialog" aria-labelledby="notifications-title" @opened="load()" @closed="emit('closed')">
+      <ModalHeader close-label="Fechar notificações" @close="close"><h2 id="notifications-title">Notificações <small v-if="unread">{{ unread }} não lidas</small></h2></ModalHeader>
       <div class="notifications-body modal-body">
         <p class="notifications-caption">Comentários recebidos nos seus livros. Clique para abrir a página e a conversa.</p>
         <div class="notifications-actions"><button data-action="ghost" class="ui-action" type="button" :disabled="busy || loading" @click="load()"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button><button data-action="ghost" class="ui-action notification-mark-read" type="button" :disabled="busy || loading || !unread" @click="markRead()">Marcar todas como lidas</button></div>
@@ -141,14 +147,13 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.library-notifications { display: flex; align-items: center; }
+.library-notifications { display: flex; align-items: center; width: 100%; }
 button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
 button:disabled { opacity: .5; cursor: default; }
 button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
-.notification-bell { position: relative; display: grid; place-items: center; width: 44px; padding: 0; background: var(--surface); }
-.notification-count, .notification-counting { position: absolute; top: 0; right: 0; min-width: 18px; padding: 1px 3px; border: 1px solid var(--paper); border-radius: 0; background: var(--green); color: var(--paper); font-size: 10px; line-height: 1.4; }
+.notification-menu-item.ui-action { width: 100%; justify-content: flex-start; }
+.notification-count { margin-left: auto; min-width: 20px; padding: 1px 4px; background: var(--green); color: var(--paper); text-align: center; font-size: 10px; line-height: 1.4; }
 h2 small { display: block; margin-top: 6px; font: 12px var(--font-sans); color: var(--muted); letter-spacing: normal; }
-header > button { font-size: 24px; width: 44px; padding: 0; }
 .notifications-caption, .notifications-empty { color: var(--muted); font-size: 13px; line-height: 1.7; }
 .notifications-caption { margin: 0 0 16px; }
 .notification-mark-read { border-color: transparent; background: transparent; font-weight: 400; color: var(--muted); }

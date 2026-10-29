@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
+import ModalHeader from './ModalHeader.vue'
+import LoadingDots from './LoadingDots.vue'
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
 import CommentActions from './CommentActions.vue'
@@ -44,7 +46,7 @@ const countUnavailable = ref(false)
 let countVersion = 0
 let countTimer: ReturnType<typeof setTimeout> | undefined
 let countController: AbortController | undefined
-const countLabel = computed(() => counting.value ? ' · carregando…' : pageCommentCount.value !== null ? ` · ${pageCommentCount.value}` : countUnavailable.value ? ' · contagem indisponível' : ' · …')
+const countDescription = computed(() => counting.value ? 'Carregando quantidade de comentários.' : pageCommentCount.value !== null ? `${pageCommentCount.value} comentários nesta página.` : countUnavailable.value ? 'Contagem indisponível. Abra os comentários para tentar novamente.' : 'Aguardando a página do livro.')
 function scheduleCount() {
   const ticket = ++countVersion
   clearTimeout(countTimer)
@@ -266,9 +268,10 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
 <template>
   <div class="page-comments">
     <RequestLoading :message="reacting ? 'Salvando reação…' : mutating ? 'Salvando comentário…' : loading ? 'Carregando comentários…' : ''" />
-    <button data-action="open" class="ui-action comments-trigger" type="button" :disabled="disabled" aria-haspopup="dialog" aria-controls="page-comments-dialog" @click="open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z" /></svg>Comentários · página {{ page }}{{ countLabel }}</button>
+    <button data-action="open" class="ui-action comments-trigger" type="button" :disabled="disabled || counting" :aria-busy="counting" :aria-label="counting ? `Carregando comentários da página ${page}` : undefined" aria-haspopup="dialog" aria-controls="page-comments-dialog" :aria-describedby="`comment-count-${bookId}-${page}`" @click="open"><span class="comments-button-content" :class="{ 'is-loading': counting }"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z" /></svg><span class="comments-trigger-label">Comentários · página {{ page }}</span><span class="comments-count" :title="countDescription" aria-hidden="true">{{ pageCommentCount === null ? '—' : pageCommentCount > 99 ? '99+' : pageCommentCount }}</span></span><span v-if="counting" class="comments-button-loading" aria-hidden="true"><LoadingDots /></span></button>
+    <span :id="`comment-count-${bookId}-${page}`" class="comments-sr" role="status" aria-live="polite">{{ countDescription }}</span>
     <BaseModal v-model="expanded" id="page-comments-dialog" class="comments-dialog" aria-labelledby="comments-title" aria-describedby="comments-description" @opened="load()">
-      <header class="comments-heading modal-header"><div><p class="eyebrow">LEITURA EM CONVERSA</p><h2 id="comments-title">Comentários da página {{ page }}</h2></div><button data-action="ghost" class="ui-action comments-close" type="button" aria-label="Fechar comentários" @click="close"><span class="action-icon" aria-hidden="true">×</span></button></header>
+      <ModalHeader class="comments-heading" close-label="Fechar comentários" @close="close"><p class="eyebrow">LEITURA EM CONVERSA</p><h2 id="comments-title">Comentários da página {{ page }}</h2></ModalHeader>
       <div class="comments-scroll-body modal-body">
       <p id="comments-description" class="comments-description">{{ bookTitle }} · Quem tem acesso ao livro pode ler e comentar.</p>
       <div class="comments-tools"><span>{{ loaded ? `${comments.length}${more ? '+' : ''} comentários` : 'Comentários desta página' }}</span><button data-action="ghost" class="ui-action" type="button" :disabled="loading || mutating || !!reacting" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button></div>
@@ -293,9 +296,14 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
 .page-comments { padding: 20px 24px; border-top: 1px solid var(--line); }
 button { min-height: 44px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
 button:disabled { opacity: .5; cursor: default; }
-.comments-trigger { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.comments-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 8px; max-width: 100%; }
 .comments-trigger svg { flex-shrink: 0; }
-.comments-close { width: 44px; padding: 0; flex-shrink: 0; border-radius: 0; font-size: 24px; }
+.comments-trigger-label { min-width: 0; }
+.comments-count { display: inline-grid; place-items: center; flex-shrink: 0; width: 32px; height: 20px; background: color-mix(in srgb, var(--green) 10%, transparent); font-size: 11px; font-variant-numeric: tabular-nums; }
+.comments-button-content { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.comments-button-content.is-loading { visibility: hidden; }
+.comments-button-loading { position: absolute; inset: 0; display: grid; place-items: center; }
+.comments-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .comments-description, .comments-empty { color: var(--muted); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
 .comments-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 16px; border-bottom: 1px solid var(--line); }
 .comments-tools > span { color: var(--muted); font-size: 11px; line-height: 1.7; }

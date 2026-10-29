@@ -11,6 +11,7 @@ const { user, ready, busy, errorMessage, accountName, signIn, signOut } = useAut
 const trigger = ref<HTMLButtonElement>()
 const dropdown = ref<HTMLElement>()
 const expanded = ref(false)
+const unreadCount = ref(0)
 const mounted = ref(false)
 const position = ref({ top: '0px', left: '0px' })
 function closeMenu() { dropdown.value?.hidePopover(); expanded.value = false }
@@ -22,7 +23,7 @@ async function openMenu(focusFirst = false) {
   const width = Math.min(260, window.innerWidth - 32)
   position.value = {
     left: `${Math.max(16, Math.min(bounds.right - width, window.innerWidth - width - 16))}px`,
-    top: `${Math.max(16, Math.min(bounds.bottom + 8, window.innerHeight - 190))}px`,
+    top: `${Math.max(16, Math.min(bounds.bottom + 8, window.innerHeight - 240))}px`,
   }
   await nextTick()
   dropdown.value?.showPopover()
@@ -32,7 +33,7 @@ async function openMenu(focusFirst = false) {
 function onToggle(event: Event) { expanded.value = (event as ToggleEvent).newState === 'open' }
 function changeTheme() { isDark.value = !isDark.value; closeMenu(); trigger.value?.focus() }
 function logout() { closeMenu(); void signOut() }
-watch(() => user.value?.id, closeMenu)
+watch(() => user.value?.id, () => { closeMenu(); unreadCount.value = 0 })
 onMounted(() => {
   mounted.value = true
   window.addEventListener('resize', closeMenu)
@@ -48,12 +49,12 @@ onUnmounted(() => {
 <template>
   <div class="google-login" :aria-busy="busy || !ready">
     <template v-if="user">
-      <button ref="trigger" class="account-trigger" type="button" :disabled="busy" :aria-expanded="expanded" aria-controls="account-dropdown" :aria-label="`Opções da conta de ${accountName}`" @click="openMenu()" @keydown.down.prevent="openMenu(true)">
+      <button ref="trigger" class="account-trigger" type="button" :disabled="busy" :aria-expanded="expanded" aria-controls="account-dropdown" :aria-label="`Opções da conta de ${accountName}${unreadCount ? `, ${unreadCount} notificações não lidas` : ''}`" @click="openMenu()" @keydown.down.prevent="openMenu(true)">
         <span class="account-avatar" aria-hidden="true">{{ accountName.slice(0, 1).toUpperCase() }}</span>
+        <span v-if="unreadCount" class="account-notification-badge" aria-hidden="true">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         <span class="account-name" :title="accountName">{{ accountName }}</span>
         <svg class="account-chevron" :class="{ expanded }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <LibraryNotifications />
     </template>
     <template v-else>
       <button data-action="primary" class="ui-action" type="button" :disabled="!ready || busy" @click="signIn(frontmatter.layout === 'library' ? '/livros.html' : '/')">{{ !ready ? 'Carregando conta…' : busy ? 'Entrando…' : 'Entrar com Google' }}</button>
@@ -62,6 +63,7 @@ onUnmounted(() => {
     <Teleport v-if="mounted" to="body">
       <div id="account-dropdown" ref="dropdown" class="account-dropdown" popover="auto" :style="position" role="group" aria-label="Opções da conta" @toggle="onToggle">
         <p class="dropdown-name">{{ accountName }}</p>
+        <LibraryNotifications v-if="user" @unread-change="unreadCount = $event" @opened="closeMenu" @closed="trigger?.focus({ preventScroll: true })" />
         <button data-action="ghost" class="ui-action" type="button" @click="changeTheme"><span class="action-icon" aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>{{ isDark ? 'Ativar tema claro' : 'Ativar tema escuro' }}</button>
         <button data-action="ghost" class="ui-action account-logout" type="button" :disabled="busy" @click="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-5-5h10" /></svg>Sair da conta</button>
       </div>
@@ -76,7 +78,8 @@ onUnmounted(() => {
 button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--green); font: inherit; cursor: pointer; }
 button:disabled { opacity: .6; cursor: default; }
 button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
-.account-trigger { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-color: transparent; background: transparent; }
+.account-trigger { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-color: transparent; background: transparent; }
+.account-notification-badge { position: absolute; top: -5px; right: 0; min-width: 18px; padding: 1px 4px; border: 1px solid var(--paper); background: var(--green); color: var(--paper); font: 600 10px/1.4 var(--font-sans); text-align: center; }
 .account-trigger:hover { background: var(--surface); }
 .account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 0; background: var(--green); color: var(--paper); font-weight: 700; }
 .account-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 13px; }
@@ -91,6 +94,6 @@ button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 @media (max-width: 900px) {
   .google-login { padding-left: 0; border-left: 0; gap: 8px; }
   .account-trigger { gap: 6px; padding: 4px; }
-  .account-name { max-width: clamp(40px, calc(100vw - 280px), 150px); }
+  .account-name { max-width: clamp(40px, calc(100vw - 230px), 150px); }
 }
 </style>

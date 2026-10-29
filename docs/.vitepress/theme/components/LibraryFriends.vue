@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
+import ModalHeader from './ModalHeader.vue'
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
 import ActionDropdown from './ActionDropdown.vue'
@@ -125,7 +126,7 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
     <ToastNotice v-if="!expanded" :model-value="error" kind="error" />
     <ToastNotice v-if="!expanded" v-model="notice" />
     <BaseModal v-model="expanded" id="friends-dialog" class="friends-dialog" aria-labelledby="friends-dialog-title" aria-describedby="friends-dialog-description">
-      <div class="dialog-heading modal-header"><div><p class="eyebrow">BOAS LEITURAS, BOAS COMPANHIAS</p><h2 id="friends-dialog-title">Conecte suas estantes.</h2></div><button data-action="ghost" class="ui-action dialog-close" type="button" aria-label="Fechar janela de amigos" @click="closeDialog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
+      <ModalHeader class="dialog-heading" close-label="Fechar janela de amigos" @close="closeDialog"><p class="eyebrow">BOAS LEITURAS, BOAS COMPANHIAS</p><h2 id="friends-dialog-title">Conecte suas estantes.</h2></ModalHeader>
       <div class="friends-modal-body modal-body">
       <p id="friends-dialog-description" class="dialog-description">Compartilhe seu código ou envie uma solicitação. Após o aceite, os livros compartilhados ficam disponíveis para ambos. Livros privados e progresso de leitura continuam individuais.</p>
     <div class="friends-settings">
@@ -152,7 +153,6 @@ onUnmounted(() => { generation++; closeDialog(); window.removeEventListener('foc
 
 <style scoped>
 .friends-modal-body .friends-scroll { max-height: none; overflow: visible; scrollbar-gutter: auto; }
-.dialog-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; padding: 0; border-radius: 0; }
 .dialog-description { max-width: 540px; color: var(--muted); font-size: 13px; line-height: 1.8; margin: 10px 0 24px; }
 .friends-panel { border: 1px solid var(--line); border-radius: 0; padding: 24px; margin: 0 0 30px; background: var(--surface); }
 .friends-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }

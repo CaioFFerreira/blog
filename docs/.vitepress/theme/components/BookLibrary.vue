@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
+import ModalHeader from './ModalHeader.vue'
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -452,7 +453,7 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     </div>
     <BaseModal v-if="!selectedFriend" v-model="showUpload" id="upload-book" class="upload-dialog" aria-labelledby="upload-title" aria-describedby="upload-description">
     <form class="library-upload modal-form" @submit.prevent="uploadBook">
-      <div class="upload-modal-heading modal-header"><div><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></div><button data-action="ghost" class="ui-action upload-close library-secondary" type="button" aria-label="Fechar janela de adicionar livro" @click="closeUpload"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
+      <ModalHeader class="upload-modal-heading" close-label="Fechar janela de adicionar livro" @close="closeUpload"><p class="eyebrow">MAIS UM NA ESTANTE</p><h2 id="upload-title">Adicione sua próxima leitura</h2></ModalHeader>
       <div class="upload-modal-body modal-body">
       <p id="upload-description">Escolha um PDF de até 50 MB. Escolha quem pode ler este livro. As marcações de leitura são sempre individuais.</p>
       <label class="pdf-picker">Arquivo PDF<input ref="fileInput" type="file" accept=".pdf,application/pdf" required :disabled="uploading" @change="chooseFile"><small v-if="file">{{ file.name }} · {{ pdfSizeLabel(file.size) }} de 50 MB</small></label>
@@ -467,7 +468,7 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
     <button data-action="ghost" v-if="error && !books.length && !uploading" class="ui-action library-secondary" type="button" @click="loadBooks"><span class="action-icon" aria-hidden="true">↻</span>Tentar novamente</button>
     <ToastNotice v-if="!activeBook" v-model="notice" />
     <BaseModal v-if="activeBook && pdfUrl" :model-value="true" fullscreen class="library-reader" aria-labelledby="reader-title" aria-describedby="reader-owner" @update:model-value="open => { if (!open) closeReader(true) }">
-      <header class="reader-top modal-header"><div class="reader-title-group"><h2 id="reader-title" :title="activeBook.title">{{ activeBook.title }}</h2><p id="reader-owner" class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div><button data-action="ghost" class="ui-action library-secondary" type="button" aria-label="Fechar leitor" @click="closeReader(true)"><span class="action-icon" aria-hidden="true">×</span>Fechar</button></header>
+      <ModalHeader class="reader-top" close-label="Fechar leitor" @close="closeReader(true)"><div class="reader-title-group"><h2 id="reader-title" :title="activeBook.title">{{ activeBook.title }}</h2><p id="reader-owner" class="reader-owner">Da estante de {{ bookOwnerName(activeBook.owner_id) }}</p></div></ModalHeader>
       <div class="reader-content modal-body">
         <PdfReader :key="pdfUrl" :url="pdfUrl" :initial-page="readerInitialPage" :title="activeBook.title" fill @page-change="page = $event" @ready="readerPageReady = $event" />
       </div>
@@ -513,7 +514,6 @@ onUnmounted(() => window.removeEventListener('library:open-notification', onNoti
 .reader-footer :deep(.page-comments) { flex: 1; min-width: 0; padding: 0; border: 0; }
 .reader-footer :deep(.comments-trigger) { max-width: 100%; text-align: left; justify-content: flex-start; }
 .reader-save { margin-left: auto; flex-shrink: 0; }
-.reader-top > button { flex-shrink: 0; }
 
 .book-delete { width: 100%; min-height: 44px; margin-top: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent); border-radius: 0; background: transparent; color: var(--orange); font: 500 12px var(--font-sans); cursor: pointer; }
 .book-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--orange) 10%, transparent); }
@@ -602,7 +602,6 @@ button:disabled { opacity: .55; cursor: default; }
 .book-read:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 90%, var(--ink)); }
 .upload-modal-body { display: grid; gap: 20px; }
 .upload-modal-body > p { margin: 0; }
-.upload-close { flex-shrink: 0; width: 44px; padding: 0; border-radius: 0; }
 .library-upload > p { margin: 0; }
 .library-upload input[type='file'] { min-width: 0; font-size: 12px; }
 .library-upload input[type='file']::file-selector-button { max-width: 100%; margin-right: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--green); font: inherit; }
