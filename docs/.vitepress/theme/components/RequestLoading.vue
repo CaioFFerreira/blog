@@ -1,27 +1,18 @@
 <script setup lang="ts">
-import { nextTick, onUnmounted, ref, watch } from 'vue'
-const props = defineProps<{ message: string }>()
-const dialog = ref<HTMLDialogElement>()
-let revision = 0
-watch(() => props.message, async message => {
-  const ticket = ++revision
-  await nextTick()
-  if (ticket !== revision || !dialog.value?.isConnected) return
-  if (message && !dialog.value.open) dialog.value.showModal()
-  else if (!message && dialog.value.open) dialog.value.close()
-}, { immediate: true })
-onUnmounted(() => { revision++; dialog.value?.close() })
+import BaseModal from './BaseModal.vue'
+defineProps<{ message: string }>()
 </script>
 <template>
-  <dialog ref="dialog" class="request-loading" aria-label="Aguarde" aria-busy="true" @cancel.prevent @keydown.esc.prevent @wheel.prevent @touchmove.prevent>
-    <span class="loading-spinner" aria-hidden="true"></span><p role="status" aria-live="polite">{{ message }}</p>
-  </dialog>
+  <BaseModal :model-value="!!message" blocking compact class="request-loading" aria-label="Aguarde">
+    <svg class="loading-dots" width="40" height="16" viewBox="0 0 40 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="3" /><circle cx="20" cy="8" r="3" /><circle cx="32" cy="8" r="3" /></svg><p role="status" aria-live="polite">{{ message }}</p>
+  </BaseModal>
 </template>
 <style scoped>
-.request-loading { position: fixed; inset: 0; margin: auto; max-width: calc(100vw - 48px); padding: 24px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--ink); font: 14px/1.6 var(--font-sans); text-align: center; }
-.request-loading::backdrop { background: #0006; }
 .request-loading p { margin: 12px 0 0; }
-.loading-spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--line); border-top-color: var(--green); border-radius: 50%; animation: request-spin .8s linear infinite; }
-@keyframes request-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .loading-spinner { animation: none; } }
+.loading-dots { flex-shrink: 0; color: var(--green); overflow: visible; }
+.loading-dots circle { animation: request-pulse 1.2s ease-in-out infinite; transform-origin: center; }
+.loading-dots circle:nth-child(2) { animation-delay: .15s; }
+.loading-dots circle:nth-child(3) { animation-delay: .3s; }
+@keyframes request-pulse { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .loading-dots circle { animation: none; } }
 </style>

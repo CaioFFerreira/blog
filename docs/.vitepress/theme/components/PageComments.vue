@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseModal from './BaseModal.vue'
 import RequestLoading from './RequestLoading.vue'
 import ToastNotice from './ToastNotice.vue'
 import CommentActions from './CommentActions.vue'
@@ -19,8 +20,6 @@ interface PageComment {
 interface CommentReaction { comment_id: string; likes: number; dislikes: number; my_reaction: -1 | 0 | 1 }
 const props = defineProps<{ bookId: string; page: number; bookTitle: string; disabled?: boolean; autoOpen?: boolean }>()
 const { user } = useAuth()
-const dialog = ref<HTMLDialogElement>()
-const trigger = ref<HTMLButtonElement>()
 const comments = ref<PageComment[]>([])
 const expanded = ref(false)
 const loading = ref(false)
@@ -37,8 +36,6 @@ const editDraft = ref('')
 const error = ref('')
 const notice = ref('')
 let version = 0
-let previousOverflow = ''
-let locked = false
 let disposed = false
 const fields = 'id,author_id,page_number,body,created_at,updated_at'
 const pageCommentCount = ref<number | null>(null)
@@ -87,25 +84,10 @@ function failMessage(failure: unknown) {
   if (record.code === '42501' || record.status === 403) return 'Você não tem mais acesso a estes comentários. O livro pode ter se tornado privado ou a amizade pode ter sido removida.'
   return 'Não foi possível carregar ou salvar os comentários. Tente novamente.'
 }
-function releaseDialog() {
-  expanded.value = false
-  if (locked) { document.body.style.overflow = previousOverflow; locked = false }
-}
-function close() { dialog.value?.close(); releaseDialog() }
-function onClose() {
-  releaseDialog()
-  if (trigger.value?.isConnected) trigger.value.focus({ preventScroll: true })
-}
-async function open() {
+function close() { expanded.value = false }
+function open() {
   if (!user.value || props.disabled || expanded.value) return
   expanded.value = true
-  await nextTick()
-  if (!dialog.value || disposed || !user.value) return
-  dialog.value.showModal()
-  previousOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
-  locked = true
-  void load()
 }
 let autoOpened = false
 watch([() => props.autoOpen, () => props.disabled, () => user.value?.id], () => {
@@ -114,20 +96,6 @@ watch([() => props.autoOpen, () => props.disabled, () => user.value?.id], () => 
     void open()
   }
 }, { immediate: true })
-function backdrop(event: MouseEvent) {
-  if (event.target !== dialog.value) return
-  const box = dialog.value.getBoundingClientRect()
-  if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close()
-}
-function trapFocus(event: KeyboardEvent) {
-  if (event.key !== 'Tab' || !dialog.value?.open) return
-  const elements = Array.from(dialog.value.querySelectorAll<HTMLElement>('button:not(:disabled), textarea:not(:disabled), [tabindex="0"]'))
-    .filter(element => element.getClientRects().length > 0)
-  const first = elements[0], last = elements[elements.length - 1]
-  if (!first || !last) return
-  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
-  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
-}
 let lastRefresh = 0
 async function refreshComments() {
   if (Date.now() - lastRefresh < 1000) return
@@ -298,10 +266,10 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
 <template>
   <div class="page-comments">
     <RequestLoading :message="reacting ? 'Salvando reação…' : mutating ? 'Salvando comentário…' : loading ? 'Carregando comentários…' : ''" />
-    <button data-action="open" ref="trigger" class="ui-action comments-trigger" type="button" :disabled="disabled" aria-haspopup="dialog" aria-controls="page-comments-dialog" @click="open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z" /></svg>Comentários · página {{ page }}{{ countLabel }}</button>
-    <dialog id="page-comments-dialog" ref="dialog" class="comments-dialog" aria-labelledby="comments-title" aria-describedby="comments-description" @cancel.prevent="close" @close="onClose" @click="backdrop" @keydown="trapFocus">
-      <header class="comments-heading"><div><p class="eyebrow">LEITURA EM CONVERSA</p><h2 id="comments-title">Comentários da página {{ page }}</h2></div><button data-action="ghost" class="ui-action comments-close" type="button" aria-label="Fechar comentários" @click="close">×</button></header>
-      <div class="comments-scroll-body">
+    <button data-action="open" class="ui-action comments-trigger" type="button" :disabled="disabled" aria-haspopup="dialog" aria-controls="page-comments-dialog" @click="open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z" /></svg>Comentários · página {{ page }}{{ countLabel }}</button>
+    <BaseModal v-model="expanded" id="page-comments-dialog" class="comments-dialog" aria-labelledby="comments-title" aria-describedby="comments-description" @opened="load()">
+      <header class="comments-heading modal-header"><div><p class="eyebrow">LEITURA EM CONVERSA</p><h2 id="comments-title">Comentários da página {{ page }}</h2></div><button data-action="ghost" class="ui-action comments-close" type="button" aria-label="Fechar comentários" @click="close"><span class="action-icon" aria-hidden="true">×</span></button></header>
+      <div class="comments-scroll-body modal-body">
       <p id="comments-description" class="comments-description">{{ bookTitle }} · Quem tem acesso ao livro pode ler e comentar.</p>
       <div class="comments-tools"><span>{{ loaded ? `${comments.length}${more ? '+' : ''} comentários` : 'Comentários desta página' }}</span><button data-action="ghost" class="ui-action" type="button" :disabled="loading || mutating || !!reacting" @click="refreshComments"><span class="action-icon" aria-hidden="true">↻</span>Atualizar</button></div>
       <p v-if="loading" class="comments-message" role="status">Carregando comentários…</p>
@@ -316,40 +284,33 @@ onUnmounted(() => { disposed = true; version++; countVersion++; clearTimeout(cou
         </div></article></div>
       <button data-action="ghost" v-if="more" class="ui-action comments-more" type="button" :disabled="loading || mutating || !!reacting" @click="load(true)">Mostrar mais comentários</button>
       </div>
-      <footer class="comments-footer"><span>Se o livro ficar privado, os amigos perdem acesso a esta conversa.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
-    </dialog>
+      <footer class="comments-footer modal-footer"><span>Se o livro ficar privado, os amigos perdem acesso a esta conversa.</span><button data-action="ghost" class="ui-action" type="button" @click="close">Fechar</button></footer>
+    </BaseModal>
   </div>
 </template>
 
 <style scoped>
 .page-comments { padding: 20px 24px; border-top: 1px solid var(--line); }
-button { min-height: 44px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
+button { min-height: 44px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--green); font: 500 12px var(--font-sans); cursor: pointer; }
 button:disabled { opacity: .5; cursor: default; }
 .comments-trigger { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; max-width: 100%; }
 .comments-trigger svg { flex-shrink: 0; }
-.comments-dialog { width: min(700px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 90px #0004; }
-.comments-dialog[open] { display: flex; flex-direction: column; }
-.comments-scroll-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 28px 20px; scrollbar-gutter: stable; }
-.comments-dialog::backdrop { background: #08130db3; backdrop-filter: blur(5px); }
-.comments-heading { flex-shrink: 0; padding: 22px 28px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-h2 { margin: 8px 0; font: 500 clamp(22px, 4vw, 28px)/1.2 var(--display); letter-spacing: -.03em; }
-.comments-close { width: 44px; padding: 0; flex-shrink: 0; border-radius: 2px; font-size: 24px; }
+.comments-close { width: 44px; padding: 0; flex-shrink: 0; border-radius: 0; font-size: 24px; }
 .comments-description, .comments-empty { color: var(--muted); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
 .comments-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 16px; border-bottom: 1px solid var(--line); }
-.comments-tools > span, .comments-footer > span { color: var(--muted); font-size: 11px; line-height: 1.7; }
-.comments-message, .comments-error { font-size: 12px; line-height: 1.8; }
+.comments-tools > span { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.comments-message { font-size: 12px; line-height: 1.8; }
 .comments-message { color: var(--green); }
-.comments-error { color: var(--orange); }
 .comment-compose, .comment-edit { display: grid; gap: 10px; margin: 20px 0; }
 label { display: grid; gap: 10px; color: var(--muted); font-size: 12px; }
-textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 100px; max-height: 240px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 2px; color: var(--ink); background: var(--paper); font: 14px/1.7 var(--font-sans); }
+textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 100px; max-height: 240px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 0; color: var(--ink); background: var(--paper); font: 14px/1.7 var(--font-sans); }
 .comment-compose > div, .comment-edit > div { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
 .comment-compose small { margin-right: auto; color: var(--muted); font-size: 10px; }
 .comment-primary { background: var(--green); color: var(--paper); border-color: var(--green); }
 .comments-list { min-width: 0; }
 .comment-item { padding: 18px 0; border-top: 1px solid var(--line); }
 .comment-item > header { display: flex; align-items: center; gap: 10px; }
-.comment-avatar { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--paper); font-size: 12px; }
+.comment-avatar { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 0; color: var(--green); background: var(--paper); font-size: 12px; }
 .comment-author { display: grid; gap: 5px; min-width: 0; flex: 1; }
 .comment-item strong { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
 .comment-author > span { color: var(--muted); font-size: 10px; line-height: 1.6; }
@@ -362,6 +323,5 @@ textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; mi
 .dislike-icon { transform: rotate(180deg); }
 .reaction-count { min-width: 12px; font-variant-numeric: tabular-nums; }
 .comments-more { display: block; margin: 18px auto; }
-.comments-footer { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; margin: 0; border-top: 1px solid var(--line); }
-@media (max-width: 480px) { .page-comments { padding-inline: 20px; } .comments-trigger { width: 100%; } .comments-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); } .comments-heading { padding: 16px 20px; } .comments-scroll-body { padding: 0 20px 16px; } .comments-footer { padding: 12px 20px; } textarea { font-size: 16px; } .comments-footer { align-items: flex-start; flex-direction: column; } .comments-footer > button { width: 100%; } }
+@media (max-width: 480px) { .page-comments { padding-inline: 20px; } .comments-trigger { width: 100%; } }
 </style>

@@ -6,8 +6,8 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 
-const props = defineProps<{ url: string; initialPage: number; title: string; saving?: boolean }>()
-const emit = defineEmits<{ pageChange: [page: number]; save: [page: number]; ready: [value: boolean] }>()
+const props = defineProps<{ url: string; initialPage: number; title: string; fill?: boolean }>()
+const emit = defineEmits<{ pageChange: [page: number]; ready: [value: boolean] }>()
 const stage = ref<HTMLElement>()
 const pages = ref<Array<{ number: number; ratio: number; ready: boolean; text: string }>>([])
 const loading = ref(true)
@@ -237,11 +237,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pdf-reader" :aria-busy="loading || rendering">
+  <div class="pdf-reader" :class="{ 'pdf-reader-fill': fill }" :aria-busy="loading || rendering">
     <RequestLoading :message="loading && !passwordRequired ? 'Preparando PDF…' : ''" />
     <div v-if="totalPages" class="pdf-toolbar">
-      <div class="pdf-navigation"><form @submit.prevent="navigate(pageInput)"><label><span class="pdf-accessible-text">Página</span><input v-model.number="pageInput" type="number" min="1" :max="totalPages" :disabled="loading" aria-label="Ir para página"></label><span class="pdf-page-count">/ {{ totalPages }}</span><button data-action="navigate" class="ui-action" type="submit" :disabled="loading" aria-label="Ir para a página informada">Ir <span aria-hidden="true">→</span></button></form></div>
-      <button data-action="primary" class="ui-action pdf-save" type="button" :disabled="loading || rendering || !!error || saving" :aria-label="`Salvar página ${currentPage}`" @click="emit('save', currentPage)">{{ saving ? 'Salvando…' : 'Salvar' }}</button>
+      <div class="pdf-navigation"><form @submit.prevent="navigate(pageInput)"><label><span class="pdf-accessible-text">Página</span><input v-model.number="pageInput" type="number" min="1" :max="totalPages" :disabled="loading" aria-label="Ir para página"></label><span class="pdf-page-count">/ {{ totalPages }}</span><button data-action="navigate" class="ui-action" type="submit" :disabled="loading" aria-label="Ir para a página informada"><span class="action-icon" aria-hidden="true">→</span>Ir</button></form></div>
     </div>
     <p v-if="loading && !passwordRequired" class="pdf-message" role="status">Preparando o PDF para leitura…</p>
     <form v-if="passwordRequired" class="pdf-password" @submit.prevent="unlock"><label>Este PDF está protegido. Informe a senha do arquivo.<input v-model="password" type="password" autocomplete="off" required></label><ToastNotice :model-value="passwordError ? 'Senha incorreta. Tente novamente.' : ''" kind="error" /><button data-action="primary" class="ui-action" type="submit">Abrir PDF</button></form>
@@ -259,17 +258,20 @@ onUnmounted(() => {
 
 <style scoped>
 .pdf-reader { min-width: 0; }
+.pdf-reader-fill { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.pdf-reader-fill > :not(.pdf-stage) { flex-shrink: 0; }
+.pdf-reader-fill .pdf-stage { height: auto; flex: 1; min-height: 0; }
+.pdf-reader-fill .pdf-toolbar { position: static; flex-shrink: 0; }
 .pdf-page-count { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pdf-toolbar, .pdf-navigation, .pdf-navigation form { display: flex; align-items: center; gap: 8px; }
 .pdf-toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); box-shadow: 0 3px 10px #00000012; justify-content: space-between; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--line); gap: 12px; }
 .pdf-navigation { flex-wrap: nowrap; min-width: 0; }
-.pdf-save { background: var(--green); color: var(--paper); border-color: var(--green); font-size: 13px; font-weight: 500; }
 .pdf-navigation form { font-size: 12px; color: var(--muted); }
 .pdf-navigation label { display: flex; align-items: center; gap: 8px; }
-.pdf-navigation input { width: 64px; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font-size: 16px; }
-button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--green); font: inherit; cursor: pointer; }
+.pdf-navigation input { width: 64px; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--ink); font-size: 16px; }
+button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--green); font: inherit; cursor: pointer; }
 button:disabled { opacity: .45; cursor: default; }
-.pdf-stage { box-sizing: border-box; border-radius: 0 0 2px 2px; position: relative; width: 100%; height: 80dvh; min-height: 240px; padding: 12px; overflow: auto; overscroll-behavior: contain; overflow-anchor: auto; background: #424744; }
+.pdf-stage { box-sizing: border-box; border-radius: 0; position: relative; width: 100%; height: 80dvh; min-height: 240px; padding: 12px; overflow: auto; overscroll-behavior: contain; overflow-anchor: auto; background: #424744; }
 .pdf-page { position: relative; width: min(100%, 1400px); margin: 0 auto 16px; background: white; box-shadow: 0 3px 16px #0003; }
 .pdf-page:last-child { margin-bottom: 0; }
 .pdf-page canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
@@ -279,7 +281,7 @@ button:disabled { opacity: .45; cursor: default; }
 .pdf-error, .pdf-password > p { color: var(--orange); }
 .pdf-password { display: grid; gap: 12px; }
 .pdf-password label { display: grid; gap: 10px; }
-.pdf-password input { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font-size: 16px; }
+.pdf-password input { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--ink); font-size: 16px; }
 .pdf-password > button { justify-self: start; }
 .pdf-accessible-text { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 600px) {
@@ -289,7 +291,6 @@ button:disabled { opacity: .45; cursor: default; }
   .pdf-navigation label { min-width: 0; gap: 0; }
   .pdf-navigation input { appearance: textfield; width: 54px; padding: 6px; text-align: center; font-variant-numeric: tabular-nums; }
   .pdf-navigation input::-webkit-inner-spin-button, .pdf-navigation input::-webkit-outer-spin-button { appearance: none; margin: 0; }
-  .pdf-save { padding-inline: 10px; }
 }
 
 </style>

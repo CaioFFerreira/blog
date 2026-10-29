@@ -12,9 +12,6 @@ const trigger = ref<HTMLButtonElement>()
 const dropdown = ref<HTMLElement>()
 const expanded = ref(false)
 const mounted = ref(false)
-const mobile = ref(false)
-let mobileQuery: MediaQueryList | undefined
-function updateMobile() { mobile.value = mobileQuery?.matches ?? false }
 const position = ref({ top: '0px', left: '0px' })
 function closeMenu() { dropdown.value?.hidePopover(); expanded.value = false }
 async function openMenu(focusFirst = false) {
@@ -38,14 +35,10 @@ function logout() { closeMenu(); void signOut() }
 watch(() => user.value?.id, closeMenu)
 onMounted(() => {
   mounted.value = true
-  mobileQuery = window.matchMedia('(max-width: 900px)')
-  updateMobile()
-  mobileQuery.addEventListener('change', updateMobile)
   window.addEventListener('resize', closeMenu)
   document.addEventListener('scroll', closeMenu, true)
 })
 onUnmounted(() => {
-  mobileQuery?.removeEventListener('change', updateMobile)
   closeMenu()
   window.removeEventListener('resize', closeMenu)
   document.removeEventListener('scroll', closeMenu, true)
@@ -60,16 +53,16 @@ onUnmounted(() => {
         <span class="account-name" :title="accountName">{{ accountName }}</span>
         <svg class="account-chevron" :class="{ expanded }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <Teleport to="#mobile-header-notifications" :disabled="!mobile"><LibraryNotifications /></Teleport>
+      <LibraryNotifications />
     </template>
     <template v-else>
       <button data-action="primary" class="ui-action" type="button" :disabled="!ready || busy" @click="signIn(frontmatter.layout === 'library' ? '/livros.html' : '/')">{{ !ready ? 'Carregando conta…' : busy ? 'Entrando…' : 'Entrar com Google' }}</button>
-      <button data-action="ghost" class="ui-action guest-theme" type="button" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark">{{ isDark ? '☀' : '☾' }}</button>
+      <button data-action="ghost" class="ui-action guest-theme" type="button" :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="isDark = !isDark"><span class="action-icon" aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span></button>
     </template>
     <Teleport v-if="mounted" to="body">
       <div id="account-dropdown" ref="dropdown" class="account-dropdown" popover="auto" :style="position" role="group" aria-label="Opções da conta" @toggle="onToggle">
         <p class="dropdown-name">{{ accountName }}</p>
-        <button data-action="ghost" class="ui-action" type="button" @click="changeTheme"><span aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>{{ isDark ? 'Ativar tema claro' : 'Ativar tema escuro' }}</button>
+        <button data-action="ghost" class="ui-action" type="button" @click="changeTheme"><span class="action-icon" aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>{{ isDark ? 'Ativar tema claro' : 'Ativar tema escuro' }}</button>
         <button data-action="ghost" class="ui-action account-logout" type="button" :disabled="busy" @click="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-5-5h10" /></svg>Sair da conta</button>
       </div>
       <RequestLoading :message="busy ? (user ? 'Saindo da conta…' : 'Conectando com Google…') : ''" />
@@ -80,20 +73,24 @@ onUnmounted(() => {
 
 <style scoped>
 .google-login { display: flex; position: relative; align-items: center; gap: 12px; min-width: 0; padding-left: 24px; border-left: 1px solid var(--line); }
-button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--green); font: inherit; cursor: pointer; }
+button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--green); font: inherit; cursor: pointer; }
 button:disabled { opacity: .6; cursor: default; }
 button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .account-trigger { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-color: transparent; background: transparent; }
 .account-trigger:hover { background: var(--surface); }
-.account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: var(--paper); font-weight: 700; }
+.account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 0; background: var(--green); color: var(--paper); font-weight: 700; }
 .account-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 13px; }
 .account-chevron { flex-shrink: 0; color: var(--muted); transition: transform .15s; }
 .account-chevron.expanded { transform: rotate(180deg); }
 .guest-theme { width: 44px; padding: 0; font-size: 23px; }
-.account-dropdown { position: fixed; box-sizing: border-box; width: min(260px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: 0; padding: 6px; overflow-y: auto; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); color: var(--ink); box-shadow: 0 10px 36px #0003; }
+.account-dropdown { position: fixed; box-sizing: border-box; width: min(260px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: 0; padding: 6px; overflow-y: auto; border: 1px solid var(--line); border-radius: 0; background: var(--surface); color: var(--ink); box-shadow: 0 10px 36px #0003; }
 .dropdown-name { margin: 0 4px 6px; padding: 10px 8px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font: 12px/1.6 var(--font-sans); overflow-wrap: anywhere; }
-.account-dropdown button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; text-align: left; font: 13px var(--font-sans); }
+.account-dropdown button.ui-action { justify-content: flex-start; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; text-align: left; font: 13px var(--font-sans); }
 .account-dropdown button:hover { background: color-mix(in srgb, var(--green) 8%, transparent); }
 .account-dropdown button > span { display: inline-grid; place-items: center; width: 18px; font-size: 20px; }
-@media (max-width: 900px) { .google-login { width: 100%; padding: 12px 0 0; margin-top: 8px; border-left: 0; border-top: 1px solid var(--line); } .account-trigger { flex: 1; padding-inline: 12px; } .account-name { max-width: none; flex: 1; text-align: left; } .guest-theme { margin-left: auto; } }
+@media (max-width: 900px) {
+  .google-login { padding-left: 0; border-left: 0; gap: 8px; }
+  .account-trigger { gap: 6px; padding: 4px; }
+  .account-name { max-width: clamp(40px, calc(100vw - 280px), 150px); }
+}
 </style>

@@ -64,7 +64,7 @@ onUnmounted(() => {
 <template>
   <div ref="container" class="audio-menu" @keydown="closeOnEscape">
     <button ref="trigger" class="audio-menu-trigger" type="button" :aria-expanded="expanded" aria-controls="focus-audio-panel" @click="togglePanel">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 14v-3a8 8 0 0 1 16 0v3M4 13H3v7h4v-7H4Zm16 0h1v7h-4v-7h3Z" /></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 14v-3a8 8 0 0 1 16 0v3M4 13H3v7h4v-7H4Zm16 0h1v7h-4v-7h3Z" /></svg>
       <span>Música <span v-if="playing" class="audio-playing-dot" aria-label="tocando">●</span></span>
     </button>
   <section v-show="expanded" id="focus-audio-panel" class="focus-audio" aria-labelledby="focus-audio-title">
@@ -79,7 +79,7 @@ onUnmounted(() => {
         <span class="focus-audio-state" role="status">{{ playing ? 'Tocando' : 'Som pausado' }}</span>
       </div>
       <p class="audio-help">Volume do player em 100%. Ajuste o volume pelo computador ou dispositivo.</p>
-      <p class="audio-help">A reprodução começa quando você decidir, independente do Pomodoro.</p>
+      <p class="audio-help">A reprodução começa quando você decidir.</p>
     </template>
     <p v-else class="audio-help">Este navegador não oferece suporte ao player de sons.</p>
     <p v-if="error" class="focus-audio-error" role="alert">{{ error }}</p>
